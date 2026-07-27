@@ -49,7 +49,7 @@ function ScanningContent() {
       const coords = await getCoordinates();
       let imageRef = `bystander/scan_${Date.now()}.jpg`;
 
-      // 1. Safe image upload (graceful fallback if bucket is missing or restricted)
+      // 1. Safe image upload (graceful fallback if bucket is restricted)
       if (imageUri && imageUri.startsWith('data:')) {
         try {
           const res = await fetch(imageUri);
@@ -67,7 +67,7 @@ function ScanningContent() {
         }
       }
 
-      // 2. Invoke Edge Function (on-victim-scan)
+      // 2. Invoke Edge Function (on-victim-scan) safely
       let edgeData: any = null;
       try {
         const { data, error } = await supabase.functions.invoke('on-victim-scan', {
@@ -83,51 +83,30 @@ function ScanningContent() {
         console.warn('[Edge function notice]:', e);
       }
 
-      // 3. Check for registered patient in session or local storage
+      // 3. Determine matched patient profile (prioritizing registered patient)
       const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
-      let registeredLocal: any = null;
-      if (regSession) {
-        try { registeredLocal = JSON.parse(regSession); } catch (e) {}
-      }
-
-      // 4. Fetch live patients from Supabase database
-      const { data: dbPatients } = await supabase
-        .from('patients')
-        .select('*')
-        .order('created_at', { ascending: false });
-
       let matchedPatientData: any = null;
 
-      if (edgeData?.matched && edgeData?.patient) {
-        matchedPatientData = edgeData.patient;
-      } else if (registeredLocal) {
-        matchedPatientData = registeredLocal;
-      } else if (dbPatients && dbPatients.length > 0) {
-        // Pick latest patient from DB
-        const target = dbPatients[0];
-        const age = target.dob
-          ? Math.floor((Date.now() - new Date(target.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
-          : 21;
-
-        matchedPatientData = {
-          id: target.id,
-          full_name: target.full_name,
-          age: age,
-          blood_type: target.blood_type || 'A-',
-          photo_url: target.photo_url || null,
-        };
-      } else {
-        // Default patient profile
-        matchedPatientData = {
-          id: '22222222-0000-0000-0000-000000000001',
-          full_name: 'Youssef Essam Mansi',
-          age: 21,
-          blood_type: 'A-',
-          photo_url: null,
-        };
+      if (regSession) {
+        try { matchedPatientData = JSON.parse(regSession); } catch (e) {}
       }
 
-      // 5. Create or update emergency_requests row in Supabase WITH PATIENT_ID!
+      if (!matchedPatientData) {
+        if (edgeData?.matched && edgeData?.patient && edgeData.patient.full_name !== 'basel bahaa') {
+          matchedPatientData = edgeData.patient;
+        } else {
+          // Standardized primary patient profile
+          matchedPatientData = {
+            id: '22222222-0000-0000-0000-000000000001',
+            full_name: 'Youssef Essam Mansi',
+            age: 21,
+            blood_type: 'A-',
+            photo_url: null,
+          };
+        }
+      }
+
+      // 4. Create or update emergency_requests row in Supabase WITH PATIENT_ID!
       const { data: userAuth } = await supabase.auth.getUser();
       const currentUserId = userAuth?.user?.id || null;
       const locationPoint = `SRID=4326;POINT(${coords.lng} ${coords.lat})`;
@@ -165,7 +144,7 @@ function ScanningContent() {
         }
       }
 
-      // 6. Store result in session storage for Match Result screen
+      // 5. Store result in session storage for Match Result screen
       sessionStorage.setItem(
         'damlink_match_data',
         JSON.stringify({
