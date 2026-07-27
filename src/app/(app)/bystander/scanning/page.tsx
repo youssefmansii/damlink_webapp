@@ -49,7 +49,7 @@ function ScanningContent() {
       const coords = await getCoordinates();
       let imageRef = `bystander/scan_${Date.now()}.jpg`;
 
-      // 1. Safe image upload (graceful fallback if bucket is restricted)
+      // 1. Safe image upload if available
       if (imageUri && imageUri.startsWith('data:')) {
         try {
           const res = await fetch(imageUri);
@@ -67,7 +67,7 @@ function ScanningContent() {
         }
       }
 
-      // 2. Invoke Edge Function (on-victim-scan) safely
+      // 2. Invoke Edge Function (on-victim-scan) to perform real scanning & PostGIS hospital matching
       let edgeData: any = null;
       try {
         const { data, error } = await supabase.functions.invoke('on-victim-scan', {
@@ -83,30 +83,31 @@ function ScanningContent() {
         console.warn('[Edge function notice]:', e);
       }
 
-      // 3. Determine matched patient profile (prioritizing registered patient)
+      // 3. Determine matched patient (prioritizing edge function match & registered patients)
       const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
+      let registeredLocal: any = null;
+      if (regSession) {
+        try { registeredLocal = JSON.parse(regSession); } catch (e) {}
+      }
+
       let matchedPatientData: any = null;
 
-      if (regSession) {
-        try { matchedPatientData = JSON.parse(regSession); } catch (e) {}
+      if (edgeData?.matched && edgeData?.patient) {
+        matchedPatientData = edgeData.patient;
+      } else if (registeredLocal) {
+        matchedPatientData = registeredLocal;
+      } else {
+        // Primary seeded patient record from database schema
+        matchedPatientData = {
+          id: '22222222-0000-0000-0000-000000000001',
+          full_name: 'Mohamed Ibrahim',
+          age: 34,
+          blood_type: 'O+',
+          photo_url: null,
+        };
       }
 
-      if (!matchedPatientData) {
-        if (edgeData?.matched && edgeData?.patient && edgeData.patient.full_name !== 'basel bahaa') {
-          matchedPatientData = edgeData.patient;
-        } else {
-          // Standardized primary patient profile
-          matchedPatientData = {
-            id: '22222222-0000-0000-0000-000000000001',
-            full_name: 'Youssef Essam Mansi',
-            age: 21,
-            blood_type: 'A-',
-            photo_url: null,
-          };
-        }
-      }
-
-      // 4. Create or update emergency_requests row in Supabase WITH PATIENT_ID!
+      // 4. Create emergency_requests row in Supabase WITH PATIENT_ID!
       const { data: userAuth } = await supabase.auth.getUser();
       const currentUserId = userAuth?.user?.id || null;
       const locationPoint = `SRID=4326;POINT(${coords.lng} ${coords.lat})`;
@@ -118,7 +119,7 @@ function ScanningContent() {
           .from('emergency_requests')
           .update({
             patient_id: matchedPatientData.id,
-            blood_type_needed: matchedPatientData.blood_type || 'A-',
+            blood_type_needed: matchedPatientData.blood_type || 'O+',
             status: 'donor_matching',
           })
           .eq('id', finalRequestId);
@@ -128,11 +129,11 @@ function ScanningContent() {
           .insert({
             patient_id: matchedPatientData.id,
             scanned_by_user_id: currentUserId,
-            blood_type_needed: matchedPatientData.blood_type || 'A-',
+            blood_type_needed: matchedPatientData.blood_type || 'O+',
             units_needed: 2,
             status: 'donor_matching',
             location: locationPoint,
-            assigned_hospital_id: '11111111-0000-0000-0000-000000000002',
+            assigned_hospital_id: edgeData?.hospital?.id || '11111111-0000-0000-0000-000000000001',
             urgency: 'urgent',
             expires_at: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
           })
@@ -152,9 +153,9 @@ function ScanningContent() {
           patient: matchedPatientData,
           request_id: finalRequestId || `req_${Date.now()}`,
           hospital: edgeData?.hospital || {
-            id: '11111111-0000-0000-0000-000000000002',
-            name: 'Nasser Institute Hospital',
-            address: 'Corniche El Nile, Shubra, Cairo',
+            id: '11111111-0000-0000-0000-000000000001',
+            name: 'Kasr Al Ainy Hospital',
+            address: 'Al-Saray St, Al-Manyal, Cairo',
             eta_minutes: 15,
           },
         })
