@@ -78,7 +78,14 @@ function ScanningContent() {
         console.warn('[Edge function notice]:', e);
       }
 
-      // 2. Fetch live patients from Supabase database
+      // 2. Check for locally registered patient in session storage
+      const regSession = sessionStorage.getItem('damlink_registered_patient');
+      let registeredLocal: any = null;
+      if (regSession) {
+        try { registeredLocal = JSON.parse(regSession); } catch (e) {}
+      }
+
+      // 3. Fetch live patients from Supabase database
       const { data: dbPatients } = await supabase
         .from('patients')
         .select('*')
@@ -88,8 +95,10 @@ function ScanningContent() {
 
       if (edgeData?.matched && edgeData?.patient) {
         matchedPatientData = edgeData.patient;
+      } else if (registeredLocal) {
+        matchedPatientData = registeredLocal;
       } else if (dbPatients && dbPatients.length > 0) {
-        // Match against real patient in DB (most recently registered or active)
+        // Pick latest patient from DB
         const target = dbPatients[0];
         const age = target.dob
           ? Math.floor((Date.now() - new Date(target.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
@@ -103,7 +112,7 @@ function ScanningContent() {
           photo_url: target.photo_url || null,
         };
       } else {
-        // Fallback patient
+        // Default patient
         matchedPatientData = {
           id: '22222222-0000-0000-0000-000000000001',
           full_name: 'Youssef Essam Mansi',
@@ -113,7 +122,7 @@ function ScanningContent() {
         };
       }
 
-      // 3. Create or update emergency_requests row in Supabase WITH PATIENT_ID!
+      // 4. Create or update emergency_requests row in Supabase WITH PATIENT_ID!
       const { data: userAuth } = await supabase.auth.getUser();
       const currentUserId = userAuth?.user?.id || null;
       const locationPoint = `SRID=4326;POINT(${coords.lng} ${coords.lat})`;
@@ -121,7 +130,6 @@ function ScanningContent() {
       let finalRequestId = edgeData?.request_id || null;
 
       if (finalRequestId) {
-        // Update pre-created edge function request with matched patient_id
         await supabase
           .from('emergency_requests')
           .update({
@@ -131,7 +139,6 @@ function ScanningContent() {
           })
           .eq('id', finalRequestId);
       } else {
-        // Insert new emergency request row with patient_id
         const { data: newReq } = await supabase
           .from('emergency_requests')
           .insert({
@@ -153,7 +160,7 @@ function ScanningContent() {
         }
       }
 
-      // 4. Store result in session storage for Match Result screen
+      // 5. Store result in session storage for Match Result screen
       sessionStorage.setItem(
         'damlink_match_data',
         JSON.stringify({

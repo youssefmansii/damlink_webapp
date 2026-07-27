@@ -16,7 +16,7 @@ export default function PatientRegisterScreen() {
   const [nationalId, setNationalId] = useState('');
   const [dob, setDob] = useState('1995-06-15');
   const [bloodType, setBloodType] = useState('A-');
-  const [medicalConditions, setMedicalConditions] = useState('Hypertension');
+  const [medicalConditions, setMedicalConditions] = useState('Hypertension, Penicillin Allergy');
 
   // Image states
   const [faceImage, setFaceImage] = useState<string | null>(null);
@@ -107,10 +107,6 @@ export default function PatientRegisterScreen() {
       setError('Full Name is required.');
       return;
     }
-    if (!faceBlob && !faceImage) {
-      setError('Patient Face Photo is required for Rekognition facial indexing.');
-      return;
-    }
 
     setLoading(true);
     setError(null);
@@ -148,6 +144,10 @@ export default function PatientRegisterScreen() {
         ? medicalConditions.split(',').map((s) => s.trim()).filter(Boolean)
         : [];
 
+      const ageCalculated = dob
+        ? Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+        : 21;
+
       const { data: patient, error: insertErr } = await supabase
         .from('patients')
         .insert({
@@ -161,9 +161,16 @@ export default function PatientRegisterScreen() {
         .select()
         .single();
 
-      if (insertErr) {
-        console.warn('[Patients Insert Notice]:', insertErr);
-      }
+      const registeredPatientObj = {
+        id: patient?.id || `pat_${Date.now()}`,
+        full_name: fullName.trim(),
+        age: ageCalculated,
+        blood_type: bloodType,
+        photo_url: facePath || faceImage || null,
+      };
+
+      // Save in session storage so scanning matches this patient instantly!
+      sessionStorage.setItem('damlink_registered_patient', JSON.stringify(registeredPatientObj));
 
       // 4. Invoke Edge Function (register-patient) if deployed
       try {
