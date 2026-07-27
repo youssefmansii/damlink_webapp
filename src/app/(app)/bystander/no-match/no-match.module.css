@@ -1,0 +1,205 @@
+.screen {
+  min-height: 100vh;
+  background-color: var(--donor-bg-dark);
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--donor-primary) 0%, var(--donor-primary-dark) 100%);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.backBtn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.headerTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.content {
+  flex: 1;
+  padding: 1.25rem;
+  max-width: 540px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.statusCard {
+  background-color: var(--donor-card-bg);
+  border-radius: var(--donor-radius);
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid var(--donor-border);
+}
+
+.statusIconWrap {
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: center;
+}
+
+.statusTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.statusSub {
+  font-size: 0.9rem;
+  color: var(--donor-text-muted);
+  line-height: 1.4;
+}
+
+.callBtn {
+  background-color: #1EA35A;
+  color: #FFFFFF;
+  border-radius: var(--donor-radius);
+  padding: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+
+  &:hover {
+    background-color: #17894a;
+  }
+}
+
+.dividerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.divider {
+  flex: 1;
+  height: 1px;
+  background-color: var(--donor-border);
+}
+
+.dividerText {
+  font-size: 0.8rem;
+  color: var(--donor-text-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fieldLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--donor-text-muted);
+}
+
+.textarea {
+  background-color: var(--donor-card-bg);
+  border: 1px solid var(--donor-border);
+  border-radius: var(--donor-radius);
+  padding: 0.75rem 1rem;
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--donor-primary-bright);
+  }
+}
+
+.bloodTypeGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bloodChip {
+  background-color: var(--donor-card-bg);
+  border: 1px solid var(--donor-border);
+  color: var(--donor-text-muted);
+  border-radius: 9999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--donor-primary-bright);
+    color: #FFFFFF;
+  }
+}
+
+.bloodChipActive {
+  background-color: var(--donor-primary);
+  border-color: var(--donor-primary-bright);
+  color: #FFFFFF;
+}
+
+.submitBtn {
+  background: linear-gradient(135deg, var(--donor-primary) 0%, var(--donor-primary-dark) 100%);
+  border: none;
+  border-radius: var(--donor-radius);
+  padding: 0.9rem;
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.retryBtn {
+  background: transparent;
+  border: 1px solid var(--donor-border);
+  border-radius: var(--donor-radius);
+  padding: 0.75rem;
+  color: var(--donor-text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #FFFFFF;
+    color: #FFFFFF;
+  }
+}
