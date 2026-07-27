@@ -32,7 +32,13 @@ const MODE_INSTRUCTIONS: Record<ScanMode, string> = {
 function ScanContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialMode = (searchParams.get('mode') as ScanMode) || 'face';
+  const rawMode = searchParams.get('mode');
+  
+  const initialMode: ScanMode = (rawMode === 'id' || rawMode === 'national_id')
+    ? 'national_id'
+    : (rawMode && rawMode in MODE_LABELS)
+    ? (rawMode as ScanMode)
+    : 'face';
 
   const [selectedMode, setSelectedMode] = useState<ScanMode>(initialMode);
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
@@ -73,7 +79,7 @@ function ScanContent() {
     }, 300);
   };
 
-  const SelectedIcon = MODE_ICONS[selectedMode];
+  const SelectedIcon = MODE_ICONS[selectedMode] || User;
 
   return (
     <div className={styles.screen}>
@@ -90,7 +96,7 @@ function ScanContent() {
         <div className={styles.sectionLabel}>Scan Type</div>
         <div className={styles.modeRow}>
           {(Object.keys(MODE_LABELS) as ScanMode[]).map((m) => {
-            const IconComp = MODE_ICONS[m];
+            const IconComp = MODE_ICONS[m] || User;
             const isActive = selectedMode === m;
             return (
               <button
