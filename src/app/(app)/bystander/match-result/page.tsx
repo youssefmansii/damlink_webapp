@@ -27,52 +27,42 @@ export default function MatchResultScreen() {
       }
     }
 
-    // Query live patients table if no session storage match
-    const { data: realPatients } = await supabase
-      .from('patients')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (realPatients && realPatients.length > 0) {
-      const p = realPatients[0];
-      const age = p.dob
-        ? Math.floor((Date.now() - new Date(p.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
-        : 21;
-
-      setMatchData({
-        matched: true,
-        patient: {
-          id: p.id,
-          full_name: p.full_name,
-          age: age,
-          blood_type: p.blood_type || 'A-',
-          photo_url: p.photo_url || null,
-        },
-        request_id: 'req-live-123',
-        hospital: {
-          id: '11111111-0000-0000-0000-000000000002',
-          name: 'Nasser Institute Hospital',
-          eta_minutes: 15,
-        },
-      });
-    } else {
-      setMatchData({
-        matched: true,
-        patient: {
-          id: '22222222-0000-0000-0000-000000000009',
-          full_name: 'Youssef Essam Mansi',
-          age: 21,
-          blood_type: 'A-',
-          photo_url: null,
-        },
-        request_id: 'demo-req-123',
-        hospital: {
-          id: '11111111-0000-0000-0000-000000000002',
-          name: 'Nasser Institute Hospital',
-          eta_minutes: 15,
-        },
-      });
+    // Check session or local storage fallback
+    const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
+    if (regSession) {
+      try {
+        const p = JSON.parse(regSession);
+        setMatchData({
+          matched: true,
+          patient: p,
+          request_id: 'req-live-123',
+          hospital: {
+            id: '11111111-0000-0000-0000-000000000002',
+            name: 'Nasser Institute Hospital',
+            eta_minutes: 15,
+          },
+        });
+        return;
+      } catch (e) {}
     }
+
+    // Default match data
+    setMatchData({
+      matched: true,
+      patient: {
+        id: '22222222-0000-0000-0000-000000000001',
+        full_name: 'Youssef Essam Mansi',
+        age: 21,
+        blood_type: 'A-',
+        photo_url: null,
+      },
+      request_id: 'demo-req-123',
+      hospital: {
+        id: '11111111-0000-0000-0000-000000000002',
+        name: 'Nasser Institute Hospital',
+        eta_minutes: 15,
+      },
+    });
   };
 
   const handleNotify = async () => {
@@ -103,7 +93,19 @@ export default function MatchResultScreen() {
   const openHospitalDashboard = () => {
     const hospId = matchData?.hospital?.id || '11111111-0000-0000-0000-000000000002';
     const email = 'hospital@damlink.com';
-    window.open(`http://localhost:3000/login?demo=true&email=${encodeURIComponent(email)}&hospital_id=${hospId}`, '_blank');
+    const targetHost = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
+      ? 'https://damlink-hospital.vercel.app'
+      : 'http://localhost:3000';
+    window.open(`${targetHost}/login?demo=true&email=${encodeURIComponent(email)}&hospital_id=${hospId}`, '_blank');
+  };
+
+  const getPhotoSrc = (url?: string | null) => {
+    if (!url) return null;
+    if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    const cleanPath = url.replace(/^bystander\//, '');
+    return `https://nvisctcecmklbvnytcka.supabase.co/storage/v1/object/public/scan-uploads/${cleanPath}`;
   };
 
   const patientName = matchData?.patient?.full_name || 'Youssef Essam Mansi';
@@ -111,6 +113,7 @@ export default function MatchResultScreen() {
   const bloodType = matchData?.patient?.blood_type || 'A-';
   const hospitalName = matchData?.hospital?.name || 'Nasser Institute Hospital';
   const hospitalEta = matchData?.hospital?.eta_minutes || 15;
+  const photoSrc = getPhotoSrc(matchData?.patient?.photo_url);
 
   const initials = patientName
     .split(' ')
@@ -138,8 +141,8 @@ export default function MatchResultScreen() {
       <div className={styles.content}>
         {/* Victim identity card */}
         <div className={styles.identityCard}>
-          {matchData?.patient?.photo_url ? (
-            <img src={matchData.patient.photo_url} alt={patientName} className={styles.photo} />
+          {photoSrc ? (
+            <img src={photoSrc} alt={patientName} className={styles.photo} />
           ) : (
             <div className={styles.photoPlaceholder}>
               <span className={styles.photoInitials}>{initials}</span>
