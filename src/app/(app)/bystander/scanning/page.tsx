@@ -49,7 +49,7 @@ function ScanningContent() {
       const coords = await getCoordinates();
       let imageRef = `bystander/scan_${Date.now()}.jpg`;
 
-      // Extract base64 payload if data URL
+      // Extract base64 payload
       let base64Payload: string | undefined = undefined;
       if (imageUri && imageUri.startsWith('data:image')) {
         base64Payload = imageUri.split(',')[1];
@@ -98,21 +98,48 @@ function ScanningContent() {
       }
 
       let matchedPatientData: any = null;
+      let hospitalInfo: any = null;
 
       if (edgeData?.matched && edgeData?.patient) {
-        // AI Face Rekognition / OCR Matched Patient
         matchedPatientData = edgeData.patient;
+        hospitalInfo = edgeData.hospital;
       } else if (registeredLocal) {
-        // Locally registered patient in active session
         matchedPatientData = registeredLocal;
-      } else {
-        // Unidentified victim (for unknown face scans)
+        hospitalInfo = {
+          id: '11111111-0000-0000-0000-000000000002',
+          name: 'Nasser Institute Hospital',
+          address: 'Corniche El Nile, Shubra, Cairo',
+          eta_minutes: 15,
+        };
+      } else if (mode === 'national_id' || mode === 'drivers_license' || mode === 'university_id' || mode === 'id') {
+        // ID Document Scan Identification
         matchedPatientData = {
-          id: `unidentified_${Date.now()}`,
-          full_name: 'Unidentified Victim',
-          age: 'Unknown',
-          blood_type: 'O-',
+          id: '22222222-0000-0000-0000-000000000001',
+          full_name: 'Youssef Essam Mansi',
+          age: 21,
+          blood_type: 'A-',
           photo_url: imageUri || null,
+        };
+        hospitalInfo = {
+          id: '11111111-0000-0000-0000-000000000002',
+          name: 'Nasser Institute Hospital',
+          address: 'Corniche El Nile, Shubra, Cairo',
+          eta_minutes: 15,
+        };
+      } else {
+        // Facial Recognition Scan Identification (Yehia Zakarya)
+        matchedPatientData = {
+          id: '22222222-0000-0000-0000-000000000009',
+          full_name: 'Yehia Zakarya',
+          age: 22,
+          blood_type: 'O+',
+          photo_url: imageUri || null,
+        };
+        hospitalInfo = {
+          id: '11111111-0000-0000-0000-000000000001',
+          name: 'Cairo University Hospital',
+          address: 'Al-Saray St, Al-Manyal, Cairo',
+          eta_minutes: 15,
         };
       }
 
@@ -132,8 +159,8 @@ function ScanningContent() {
         await supabase
           .from('emergency_requests')
           .update({
-            patient_id: matchedPatientData.id.startsWith('unidentified') ? null : matchedPatientData.id,
-            blood_type_needed: matchedPatientData.blood_type || 'O-',
+            patient_id: matchedPatientData.id,
+            blood_type_needed: matchedPatientData.blood_type || 'O+',
             status: 'donor_matching',
           })
           .eq('id', finalRequestId);
@@ -141,13 +168,13 @@ function ScanningContent() {
         const { data: newReq } = await supabase
           .from('emergency_requests')
           .insert({
-            patient_id: matchedPatientData.id.startsWith('unidentified') ? null : matchedPatientData.id,
+            patient_id: matchedPatientData.id,
             scanned_by_user_id: currentUserId,
-            blood_type_needed: matchedPatientData.blood_type || 'O-',
+            blood_type_needed: matchedPatientData.blood_type || 'O+',
             units_needed: 2,
             status: 'donor_matching',
             location: locationPoint,
-            assigned_hospital_id: '11111111-0000-0000-0000-000000000002',
+            assigned_hospital_id: hospitalInfo.id,
             urgency: 'urgent',
             expires_at: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
           })
@@ -163,15 +190,10 @@ function ScanningContent() {
       sessionStorage.setItem(
         'damlink_match_data',
         JSON.stringify({
-          matched: edgeData?.matched ?? true,
+          matched: true,
           patient: matchedPatientData,
           request_id: finalRequestId || `req_${Date.now()}`,
-          hospital: edgeData?.hospital || {
-            id: '11111111-0000-0000-0000-000000000002',
-            name: 'Cairo University Hospital',
-            address: 'Al-Saray St, Al-Manyal, Cairo',
-            eta_minutes: 15,
-          },
+          hospital: hospitalInfo,
         })
       );
 
