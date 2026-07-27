@@ -38,7 +38,7 @@ export default function MatchResultScreen() {
           request_id: 'req-live-123',
           hospital: {
             id: '11111111-0000-0000-0000-000000000002',
-            name: 'Nasser Institute Hospital',
+            name: 'Cairo University Hospital',
             eta_minutes: 15,
           },
         });
@@ -46,20 +46,20 @@ export default function MatchResultScreen() {
       } catch (e) {}
     }
 
-    // Default match data
+    // Default real database patient
     setMatchData({
       matched: true,
       patient: {
-        id: '22222222-0000-0000-0000-000000000001',
-        full_name: 'Youssef Essam Mansi',
-        age: 21,
-        blood_type: 'A-',
-        photo_url: null,
+        id: '22222222-0000-0000-0000-000000000009',
+        full_name: 'Yehia Zakarya',
+        age: 22,
+        blood_type: 'O+',
+        photo_url: sessionStorage.getItem('damlink_scan_image') || null,
       },
       request_id: 'demo-req-123',
       hospital: {
         id: '11111111-0000-0000-0000-000000000002',
-        name: 'Nasser Institute Hospital',
+        name: 'Cairo University Hospital',
         eta_minutes: 15,
       },
     });
@@ -100,7 +100,13 @@ export default function MatchResultScreen() {
   };
 
   const getPhotoSrc = (url?: string | null) => {
-    if (!url) return null;
+    if (!url) {
+      if (typeof window !== 'undefined') {
+        const scanImg = sessionStorage.getItem('damlink_scan_image');
+        if (scanImg) return scanImg;
+      }
+      return null;
+    }
     if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
@@ -108,10 +114,10 @@ export default function MatchResultScreen() {
     return `https://nvisctcecmklbvnytcka.supabase.co/storage/v1/object/public/scan-uploads/${cleanPath}`;
   };
 
-  const patientName = matchData?.patient?.full_name || 'Youssef Essam Mansi';
-  const patientAge = matchData?.patient?.age ?? 21;
-  const bloodType = matchData?.patient?.blood_type || 'A-';
-  const hospitalName = matchData?.hospital?.name || 'Nasser Institute Hospital';
+  const patientName = matchData?.patient?.full_name || 'Yehia Zakarya';
+  const patientAge = matchData?.patient?.age ?? 22;
+  const bloodType = matchData?.patient?.blood_type || 'O+';
+  const hospitalName = matchData?.hospital?.name || 'Cairo University Hospital';
   const hospitalEta = matchData?.hospital?.eta_minutes || 15;
   const photoSrc = getPhotoSrc(matchData?.patient?.photo_url);
 
