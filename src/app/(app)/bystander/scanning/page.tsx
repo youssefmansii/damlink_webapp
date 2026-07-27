@@ -49,7 +49,13 @@ function ScanningContent() {
       const coords = await getCoordinates();
       let imageRef = `bystander/scan_${Date.now()}.jpg`;
 
-      // 1. Safe image upload
+      // Extract base64 payload from data URL if present
+      let base64Payload: string | undefined = undefined;
+      if (imageUri && imageUri.startsWith('data:image')) {
+        base64Payload = imageUri.split(',')[1];
+      }
+
+      // Safe image upload to storage if bucket permits
       if (imageUri && imageUri.startsWith('data:')) {
         try {
           const res = await fetch(imageUri);
@@ -67,13 +73,14 @@ function ScanningContent() {
         }
       }
 
-      // 2. Invoke Edge Function (on-victim-scan)
+      // 2. Invoke Edge Function (on-victim-scan) with image payload
       let edgeData: any = null;
       try {
         const { data, error } = await supabase.functions.invoke('on-victim-scan', {
           body: {
             scan_mode: mode,
             image_ref: imageRef,
+            image_base64: base64Payload,
             bystander_lat: coords.lat,
             bystander_lng: coords.lng,
           },
@@ -97,17 +104,22 @@ function ScanningContent() {
       } else if (registeredLocal) {
         matchedPatientData = registeredLocal;
       } else {
-        // Identified Patient
+        // Identified patient profile
         matchedPatientData = {
           id: '22222222-0000-0000-0000-000000000009',
           full_name: 'Yehia Zakarya',
           age: 22,
           blood_type: 'O+',
-          photo_url: null,
+          photo_url: imageUri || null,
         };
       }
 
-      // 4. Create or update emergency_requests row in Supabase WITH PATIENT_ID!
+      // Set photo_url to the newly scanned image if profile photo is empty
+      if (!matchedPatientData.photo_url && imageUri) {
+        matchedPatientData.photo_url = imageUri;
+      }
+
+      // 4. Create emergency request in database
       const { data: userAuth } = await supabase.auth.getUser();
       const currentUserId = userAuth?.user?.id || null;
       const locationPoint = `SRID=4326;POINT(${coords.lng} ${coords.lat})`;
@@ -145,7 +157,7 @@ function ScanningContent() {
         }
       }
 
-      // 5. Save match data & navigate to Match Found screen
+      // 5. Store match result & navigate
       sessionStorage.setItem(
         'damlink_match_data',
         JSON.stringify({
@@ -154,8 +166,8 @@ function ScanningContent() {
           request_id: finalRequestId || `req_${Date.now()}`,
           hospital: edgeData?.hospital || {
             id: '11111111-0000-0000-0000-000000000002',
-            name: 'Nasser Institute Hospital',
-            address: 'Corniche El Nile, Shubra, Cairo',
+            name: 'Cairo University Hospital',
+            address: 'Al-Saray St, Al-Manyal, Cairo',
             eta_minutes: 15,
           },
         })
