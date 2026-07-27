@@ -115,27 +115,35 @@ export default function PatientRegisterScreen() {
       let facePath = '';
       let idPath = '';
 
-      // 1. Upload Face Image to Supabase Storage
+      // 1. Upload Face Image to Supabase Storage if available
       if (faceBlob) {
-        const fileName = `patient-faces/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-        const { data: storageData, error: storageErr } = await supabase.storage
-          .from('scan-uploads')
-          .upload(fileName, faceBlob, { contentType: 'image/jpeg' });
+        try {
+          const fileName = `patient-faces/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+          const { data: storageData } = await supabase.storage
+            .from('scan-uploads')
+            .upload(fileName, faceBlob, { contentType: 'image/jpeg' });
 
-        if (!storageErr && storageData) {
-          facePath = storageData.path;
+          if (storageData?.path) {
+            facePath = storageData.path;
+          }
+        } catch (sErr) {
+          console.warn('[Storage upload notice]:', sErr);
         }
       }
 
-      // 2. Upload ID Image to Supabase Storage
+      // 2. Upload ID Image to Supabase Storage if available
       if (idBlob) {
-        const fileName = `patient-ids/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-        const { data: storageData, error: storageErr } = await supabase.storage
-          .from('scan-uploads')
-          .upload(fileName, idBlob, { contentType: 'image/jpeg' });
+        try {
+          const fileName = `patient-ids/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+          const { data: storageData } = await supabase.storage
+            .from('scan-uploads')
+            .upload(fileName, idBlob, { contentType: 'image/jpeg' });
 
-        if (!storageErr && storageData) {
-          idPath = storageData.path;
+          if (storageData?.path) {
+            idPath = storageData.path;
+          }
+        } catch (sErr) {
+          console.warn('[Storage upload notice]:', sErr);
         }
       }
 
@@ -169,7 +177,8 @@ export default function PatientRegisterScreen() {
         photo_url: facePath || faceImage || null,
       };
 
-      // Save in session storage so scanning matches this patient instantly!
+      // Save in BOTH localStorage & sessionStorage so face scan matches instantly!
+      localStorage.setItem('damlink_registered_patient', JSON.stringify(registeredPatientObj));
       sessionStorage.setItem('damlink_registered_patient', JSON.stringify(registeredPatientObj));
 
       // 4. Invoke Edge Function (register-patient) if deployed

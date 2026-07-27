@@ -49,7 +49,7 @@ function ScanningContent() {
       const coords = await getCoordinates();
       let imageRef = `bystander/scan_${Date.now()}.jpg`;
 
-      // 1. Safe image upload (graceful fallback if bucket is missing)
+      // 1. Safe image upload (graceful fallback if bucket is missing or restricted)
       if (imageUri && imageUri.startsWith('data:')) {
         try {
           const res = await fetch(imageUri);
@@ -83,8 +83,8 @@ function ScanningContent() {
         console.warn('[Edge function notice]:', e);
       }
 
-      // 3. Check for locally registered patient in session storage
-      const regSession = sessionStorage.getItem('damlink_registered_patient');
+      // 3. Check for registered patient in session or local storage
+      const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
       let registeredLocal: any = null;
       if (regSession) {
         try { registeredLocal = JSON.parse(regSession); } catch (e) {}
