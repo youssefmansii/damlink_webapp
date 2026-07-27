@@ -49,13 +49,13 @@ function ScanningContent() {
       const coords = await getCoordinates();
       let imageRef = `bystander/scan_${Date.now()}.jpg`;
 
-      // Extract base64 payload from data URL if present
+      // Extract base64 if data URL
       let base64Payload: string | undefined = undefined;
       if (imageUri && imageUri.startsWith('data:image')) {
         base64Payload = imageUri.split(',')[1];
       }
 
-      // Safe image upload to storage if bucket permits
+      // Safe storage upload
       if (imageUri && imageUri.startsWith('data:')) {
         try {
           const res = await fetch(imageUri);
@@ -73,7 +73,7 @@ function ScanningContent() {
         }
       }
 
-      // 2. Invoke Edge Function (on-victim-scan) with image payload
+      // Invoke Edge Function (on-victim-scan)
       let edgeData: any = null;
       try {
         const { data, error } = await supabase.functions.invoke('on-victim-scan', {
@@ -90,7 +90,7 @@ function ScanningContent() {
         console.warn('[Edge function notice]:', e);
       }
 
-      // 3. Determine matched patient profile
+      // Determine matched patient
       const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
       let registeredLocal: any = null;
       if (regSession) {
@@ -104,7 +104,6 @@ function ScanningContent() {
       } else if (registeredLocal) {
         matchedPatientData = registeredLocal;
       } else {
-        // Identified patient profile
         matchedPatientData = {
           id: '22222222-0000-0000-0000-000000000009',
           full_name: 'Yehia Zakarya',
@@ -114,12 +113,12 @@ function ScanningContent() {
         };
       }
 
-      // Set photo_url to the newly scanned image if profile photo is empty
+      // Attach snapped image if photo_url is empty
       if (!matchedPatientData.photo_url && imageUri) {
         matchedPatientData.photo_url = imageUri;
       }
 
-      // 4. Create emergency request in database
+      // Create emergency request row in Supabase
       const { data: userAuth } = await supabase.auth.getUser();
       const currentUserId = userAuth?.user?.id || null;
       const locationPoint = `SRID=4326;POINT(${coords.lng} ${coords.lat})`;
@@ -157,7 +156,7 @@ function ScanningContent() {
         }
       }
 
-      // 5. Store match result & navigate
+      // Store match data and go to match-result
       sessionStorage.setItem(
         'damlink_match_data',
         JSON.stringify({
