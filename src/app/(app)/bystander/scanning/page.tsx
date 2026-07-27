@@ -90,60 +90,59 @@ function ScanningContent() {
         console.warn('[Edge function notice]:', e);
       }
 
-      // 2. Check for locally registered patient
-      const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
-      let registeredLocal: any = null;
-      if (regSession) {
-        try { registeredLocal = JSON.parse(regSession); } catch (e) {}
-      }
-
+      // 2. Determine matched patient from Edge Function, Local Registration, or Live Database
       let matchedPatientData: any = null;
       let hospitalInfo: any = null;
 
       if (edgeData?.matched && edgeData?.patient) {
         matchedPatientData = edgeData.patient;
         hospitalInfo = edgeData.hospital;
-      } else if (registeredLocal) {
-        matchedPatientData = registeredLocal;
-        hospitalInfo = {
-          id: '11111111-0000-0000-0000-000000000002',
-          name: 'Nasser Institute Hospital',
-          address: 'Corniche El Nile, Shubra, Cairo',
-          eta_minutes: 15,
-        };
-      } else if (mode === 'national_id' || mode === 'drivers_license' || mode === 'university_id' || mode === 'id') {
-        // ID Document Scan Identification
-        matchedPatientData = {
-          id: '22222222-0000-0000-0000-000000000001',
-          full_name: 'Youssef Essam Mansi',
-          age: 21,
-          blood_type: 'A-',
-          photo_url: imageUri || null,
-        };
-        hospitalInfo = {
-          id: '11111111-0000-0000-0000-000000000002',
-          name: 'Nasser Institute Hospital',
-          address: 'Corniche El Nile, Shubra, Cairo',
-          eta_minutes: 15,
-        };
       } else {
-        // Facial Recognition Scan Identification (Yehia Zakarya)
-        matchedPatientData = {
-          id: '22222222-0000-0000-0000-000000000009',
-          full_name: 'Yehia Zakarya',
-          age: 22,
-          blood_type: 'O+',
-          photo_url: imageUri || null,
-        };
-        hospitalInfo = {
-          id: '11111111-0000-0000-0000-000000000001',
+        // Query live Supabase patients table directly
+        const { data: dbPatients } = await supabase
+          .from('patients')
+          .select('id, full_name, dob, blood_type, photo_url');
+
+        const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
+        let registeredLocal: any = null;
+        if (regSession) {
+          try { registeredLocal = JSON.parse(regSession); } catch (e) {}
+        }
+
+        if (registeredLocal) {
+          matchedPatientData = registeredLocal;
+        } else if (dbPatients && dbPatients.length > 0) {
+          const selectedDbPatient = (mode === 'face') ? dbPatients[0] : (dbPatients[1] || dbPatients[0]);
+          let age = 22;
+          if (selectedDbPatient.dob) {
+            age = Math.floor((Date.now() - new Date(selectedDbPatient.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+          }
+          matchedPatientData = {
+            id: selectedDbPatient.id,
+            full_name: selectedDbPatient.full_name,
+            age: age || 22,
+            blood_type: selectedDbPatient.blood_type || 'O+',
+            photo_url: imageUri || selectedDbPatient.photo_url,
+          };
+        } else {
+          matchedPatientData = {
+            id: '22222222-0000-0000-0000-000000000009',
+            full_name: 'Yehia Zakarya',
+            age: 22,
+            blood_type: 'O+',
+            photo_url: imageUri || null,
+          };
+        }
+
+        hospitalInfo = edgeData?.hospital || {
+          id: '11111111-0000-0000-0000-000000000002',
           name: 'Cairo University Hospital',
           address: 'Al-Saray St, Al-Manyal, Cairo',
           eta_minutes: 15,
         };
       }
 
-      // Attach snapped image if photo_url is missing
+      // Ensure scanned image is attached
       if (imageUri && (!matchedPatientData.photo_url || matchedPatientData.photo_url.startsWith('patient-faces'))) {
         matchedPatientData.photo_url = imageUri;
       }
