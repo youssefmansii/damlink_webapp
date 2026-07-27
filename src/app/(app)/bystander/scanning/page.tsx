@@ -49,7 +49,7 @@ function ScanningContent() {
       const coords = await getCoordinates();
       let imageRef = `bystander/scan_${Date.now()}.jpg`;
 
-      // Extract base64 if data URL
+      // Extract base64 payload if data URL
       let base64Payload: string | undefined = undefined;
       if (imageUri && imageUri.startsWith('data:image')) {
         base64Payload = imageUri.split(',')[1];
@@ -73,7 +73,7 @@ function ScanningContent() {
         }
       }
 
-      // Invoke Edge Function (on-victim-scan)
+      // 1. Invoke Edge Function (on-victim-scan)
       let edgeData: any = null;
       try {
         const { data, error } = await supabase.functions.invoke('on-victim-scan', {
@@ -90,7 +90,7 @@ function ScanningContent() {
         console.warn('[Edge function notice]:', e);
       }
 
-      // Determine matched patient
+      // 2. Check for locally registered patient
       const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
       let registeredLocal: any = null;
       if (regSession) {
@@ -99,26 +99,29 @@ function ScanningContent() {
 
       let matchedPatientData: any = null;
 
-      if (edgeData?.patient) {
+      if (edgeData?.matched && edgeData?.patient) {
+        // AI Face Rekognition / OCR Matched Patient
         matchedPatientData = edgeData.patient;
       } else if (registeredLocal) {
+        // Locally registered patient in active session
         matchedPatientData = registeredLocal;
       } else {
+        // Unidentified victim (for unknown face scans)
         matchedPatientData = {
-          id: '22222222-0000-0000-0000-000000000009',
-          full_name: 'Yehia Zakarya',
-          age: 22,
-          blood_type: 'O+',
+          id: `unidentified_${Date.now()}`,
+          full_name: 'Unidentified Victim',
+          age: 'Unknown',
+          blood_type: 'O-',
           photo_url: imageUri || null,
         };
       }
 
-      // Attach snapped image if photo_url is empty
-      if (!matchedPatientData.photo_url && imageUri) {
+      // Attach snapped image if photo_url is missing
+      if (imageUri && (!matchedPatientData.photo_url || matchedPatientData.photo_url.startsWith('patient-faces'))) {
         matchedPatientData.photo_url = imageUri;
       }
 
-      // Create emergency request row in Supabase
+      // 3. Create emergency request row in Supabase
       const { data: userAuth } = await supabase.auth.getUser();
       const currentUserId = userAuth?.user?.id || null;
       const locationPoint = `SRID=4326;POINT(${coords.lng} ${coords.lat})`;
@@ -129,8 +132,8 @@ function ScanningContent() {
         await supabase
           .from('emergency_requests')
           .update({
-            patient_id: matchedPatientData.id,
-            blood_type_needed: matchedPatientData.blood_type || 'O+',
+            patient_id: matchedPatientData.id.startsWith('unidentified') ? null : matchedPatientData.id,
+            blood_type_needed: matchedPatientData.blood_type || 'O-',
             status: 'donor_matching',
           })
           .eq('id', finalRequestId);
@@ -138,9 +141,9 @@ function ScanningContent() {
         const { data: newReq } = await supabase
           .from('emergency_requests')
           .insert({
-            patient_id: matchedPatientData.id,
+            patient_id: matchedPatientData.id.startsWith('unidentified') ? null : matchedPatientData.id,
             scanned_by_user_id: currentUserId,
-            blood_type_needed: matchedPatientData.blood_type || 'O+',
+            blood_type_needed: matchedPatientData.blood_type || 'O-',
             units_needed: 2,
             status: 'donor_matching',
             location: locationPoint,
@@ -156,11 +159,11 @@ function ScanningContent() {
         }
       }
 
-      // Store match data and go to match-result
+      // 4. Save match data & go to Match Result screen
       sessionStorage.setItem(
         'damlink_match_data',
         JSON.stringify({
-          matched: true,
+          matched: edgeData?.matched ?? true,
           patient: matchedPatientData,
           request_id: finalRequestId || `req_${Date.now()}`,
           hospital: edgeData?.hospital || {
