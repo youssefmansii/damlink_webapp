@@ -1,0 +1,215 @@
+.screen {
+  flex: 1;
+  background-color: var(--donor-bg);
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+.header {
+  padding: 16px 18px 0 18px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--donor-text);
+}
+
+.subtitle {
+  margin-top: 4px;
+  color: var(--donor-muted);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.loadingCard {
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapPlaceholder {
+  margin: 0 16px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.fakeMap {
+  position: relative;
+  height: 280px;
+  background: linear-gradient(135deg, #D8E6F3 0%, #B8CDE8 30%, #C8D8EC 60%, #E0EAF5 100%);
+  background-image:
+    linear-gradient(rgba(26,46,136,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,46,136,0.04) 1px, transparent 1px),
+    linear-gradient(135deg, #D8E6F3 0%, #B8CDE8 30%, #C8D8EC 60%, #E0EAF5 100%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
+}
+
+.pin {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #FFFFFF;
+  box-shadow: var(--shadow-md);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pin:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.selectedPin {
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow: 0 0 0 5px rgba(46, 91, 255, 0.4);
+  z-index: 10;
+}
+
+.userPin {
+  background-color: var(--donor-primary-bright);
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  border: 4px solid #FFFFFF;
+}
+
+.mapLabel {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background-color: rgba(26, 46, 136, 0.85);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 10px;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  padding: 12px 18px;
+  margin-top: 4px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--donor-muted);
+  font-weight: 600;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+}
+
+.cardsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px;
+  margin-top: 8px;
+}
+
+.listTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--donor-text);
+  margin-bottom: 2px;
+}
+
+.detailCard {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.detailCard:hover {
+  border-color: var(--donor-primary-bright);
+}
+
+.selectedDetailCard {
+  border: 2px solid var(--donor-primary-bright);
+  background-color: #F3F6FF;
+  box-shadow: 0 4px 12px rgba(46, 91, 255, 0.15);
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.detailHospital {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--donor-text);
+  flex: 1;
+}
+
+.urgencyBadge {
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.detailRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.detailBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #FFFFFF;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--donor-text);
+  border: 1px solid var(--donor-border);
+}
+
+.addressLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--donor-muted);
+  margin-top: 4px;
+}
+
+.emptyMapCard {
+  padding: 24px;
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--donor-muted);
+  font-size: 14px;
+  text-align: center;
+}

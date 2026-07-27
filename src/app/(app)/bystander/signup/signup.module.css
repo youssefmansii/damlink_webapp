@@ -1,0 +1,353 @@
+.screen {
+  flex: 1;
+  background-color: var(--donor-bg);
+  min-height: 100vh;
+}
+
+.header {
+  background: linear-gradient(to right, #1A2E88, #1F3DA3);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.backButton {
+  position: absolute;
+  left: 16px;
+  top: 32px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  cursor: pointer;
+  border: none;
+}
+
+.logoWrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background-color: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.headerTitle {
+  color: #FFFFFF;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.headerTagline {
+  color: #CFD8FF;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.formCard {
+  background-color: #FFFFFF;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  flex: 1;
+  padding: 24px;
+  margin-top: -16px;
+  min-height: calc(100vh - 180px);
+}
+
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.stepDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stepDotActive {
+  background-color: var(--donor-primary-bright);
+  color: #FFFFFF;
+}
+
+.stepDotDone {
+  background-color: var(--donor-success);
+  color: #FFFFFF;
+}
+
+.stepDotInactive {
+  background-color: var(--donor-border);
+  color: var(--donor-muted);
+}
+
+.stepLine {
+  width: 60px;
+  height: 2px;
+  background-color: var(--donor-border);
+  margin: 0 8px;
+}
+
+.stepLabel {
+  text-align: center;
+  color: var(--donor-muted);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--donor-text);
+  margin-bottom: 8px;
+}
+
+.photoContainer {
+  margin-bottom: 16px;
+}
+
+.uploadPlaceholder {
+  height: 140px;
+  border: 2px dashed var(--donor-border);
+  border-radius: var(--radius-md);
+  background-color: #F3F6FF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--donor-muted);
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color 0.2s;
+}
+
+.uploadPlaceholder:hover {
+  border-color: var(--donor-primary-bright);
+  color: var(--donor-primary-bright);
+}
+
+.webcamWrap {
+  position: relative;
+  height: 220px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #000;
+}
+
+.webcamView {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.captureBtn {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--donor-primary-bright);
+  color: #FFFFFF;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.previewWrap {
+  position: relative;
+  height: 160px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid var(--donor-primary-bright);
+}
+
+.previewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.retakeBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: #FFFFFF;
+  padding: 6px 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.fileUploadLabel {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--donor-primary-bright);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: right;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.rowFields {
+  display: flex;
+  gap: 12px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--donor-text);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  background-color: #F3F6FF;
+  border-radius: 12px;
+  border: 1px solid var(--donor-border);
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--donor-text);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--donor-primary-bright);
+}
+
+.errorBox {
+  display: flex;
+  align-items: center;
+  background-color: #FFF0F0;
+  border-radius: 10px;
+  border: 1px solid #FFCDD2;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.errorText {
+  color: #DD1F2A;
+  font-size: 13px;
+}
+
+.primaryButton {
+  width: 100%;
+  background-color: var(--donor-primary-bright);
+  color: #FFFFFF;
+  border-radius: 14px;
+  height: 52px;
+  font-weight: 700;
+  font-size: 16px;
+  margin-top: 16px;
+  cursor: pointer;
+  border: none;
+}
+
+.secondaryButton {
+  width: 100%;
+  color: var(--donor-muted);
+  font-size: 14px;
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.loadingScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: var(--donor-bg);
+}
+
+.loadingCard {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+.loadingTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--donor-text);
+}
+
+.loadingSubtitle {
+  font-size: 14px;
+  color: var(--donor-muted);
+}
+
+.progressSteps {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.progressStep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--donor-muted);
+  font-size: 13px;
+}
+
+.progressDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: var(--donor-primary-bright);
+  flex-shrink: 0;
+}

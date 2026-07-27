@@ -1,0 +1,98 @@
+:root {
+  /* Donor Theme Variables */
+  --donor-primary: #1A2E88;
+  --donor-primary-bright: #2E5BFF;
+  --donor-bg: #F3F6FF;
+  --donor-surface: #FFFFFF;
+  --donor-text: #121826;
+  --donor-muted: #667085;
+  --donor-border: #E6EBF5;
+  --donor-success: #1EA35A;
+  --donor-danger: #DD1F2A;
+  --donor-tab-inactive: #8A94A6;
+  
+  /* Bystander Theme Variables */
+  --bystander-primary: #8B0000;
+  --bystander-primary-bright: #DD1F2A;
+  --bystander-bg: #FFF5F5;
+  --bystander-gradient-start: #8B0000;
+  --bystander-gradient-end: #CC2222;
+  --bystander-text: #1A0000;
+  --bystander-muted: #7A4040;
+  --bystander-border: #F5D0D0;
+  --bystander-success: #1EA35A;
+  --bystander-tab-inactive: #B08080;
+  
+  /* Shared Radius */
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  /* Shared Shadows matching RN elevation */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--donor-bg);
+  color: var(--donor-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+.input-field {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  background-color: var(--donor-surface);
+  color: var(--donor-text);
+  font-size: 16px;
+  transition: border-color 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--donor-primary-bright);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Mobile Frame — gives the web app a phone-like feel on desktops ── */
+.mobile-frame {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.12);
+  background-color: var(--donor-bg);
+}
+
+@media (max-width: 480px) {
+  .mobile-frame {
+    box-shadow: none;
+  }
+}

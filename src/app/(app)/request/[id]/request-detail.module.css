@@ -1,0 +1,256 @@
+.screen {
+  flex: 1;
+  background-color: var(--donor-bg);
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+.header {
+  background: linear-gradient(135deg, #1A2E88 0%, #1F3DA3 100%);
+  padding: 20px 18px 24px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.backBtn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+}
+
+.headerTitle {
+  color: #FFFFFF;
+  font-size: 20px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.urgencyBadge {
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+
+.content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.responseBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+}
+
+.responseBannerAccepted {
+  background-color: #F0FFF6;
+  border-color: #C3F0D8;
+}
+
+.responseBannerDeclined {
+  background-color: #F7F8FA;
+  border-color: #E6EBF5;
+}
+
+.responseBannerText {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--donor-text);
+  font-weight: 600;
+}
+
+.card {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.hospitalHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hospitalAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.hospitalInfo {
+  flex: 1;
+}
+
+.hospitalName {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--donor-text);
+}
+
+.address {
+  font-size: 13px;
+  color: var(--donor-muted);
+  margin-top: 2px;
+}
+
+.phoneButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #F3F6FF;
+  border: 1px solid var(--donor-border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--donor-primary-bright);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-vertical: 8px;
+  border-bottom: 1px solid var(--donor-border);
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-size: 14px;
+  color: var(--donor-muted);
+}
+
+.value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--donor-text);
+}
+
+.valueDanger {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.valueSuccess {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.notesWrap {
+  margin-top: 8px;
+  background-color: #F8FAFC;
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid var(--donor-border);
+}
+
+.notesLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--donor-muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.notesText {
+  font-size: 14px;
+  color: var(--donor-text);
+  line-height: 1.4;
+}
+
+.actionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.acceptButton {
+  background-color: var(--donor-success);
+  color: #FFFFFF;
+  border: none;
+  height: 54px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(30, 163, 90, 0.25);
+}
+
+.declineButton {
+  background-color: #FFFFFF;
+  color: #4B5565;
+  border: 1px solid var(--donor-border);
+  height: 48px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.directionsButton {
+  background-color: var(--donor-primary-bright);
+  color: #FFFFFF;
+  border: none;
+  height: 54px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.completedBanner {
+  background-color: #E8F6EF;
+  border: 1px solid #1EA35A;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.completedText {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1EA35A;
+  line-height: 1.4;
+}

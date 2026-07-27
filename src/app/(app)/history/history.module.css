@@ -1,0 +1,67 @@
+.screen {
+  flex: 1;
+  background-color: var(--donor-bg);
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+.content {
+  padding: 16px 16px 24px 16px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--donor-text);
+}
+
+.subtitle {
+  margin-top: 4px;
+  margin-bottom: 18px;
+  color: var(--donor-muted);
+  font-size: 14px;
+}
+
+.card {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  padding: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.iconWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background-color: var(--donor-primary-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.info {
+  flex: 1;
+}
+
+.hospital {
+  color: var(--donor-text);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.meta {
+  margin-top: 3px;
+  color: var(--donor-muted);
+  font-size: 12px;
+}
+
+.status {
+  font-weight: 700;
+  font-size: 13px;
+}

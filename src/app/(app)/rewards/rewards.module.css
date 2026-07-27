@@ -1,0 +1,122 @@
+.screen {
+  flex: 1;
+  background-color: var(--donor-bg);
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+.header {
+  background: linear-gradient(to right, #1A2E88, #1F3DA3);
+  padding: 16px 20px 24px 20px;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.headerTitle {
+  color: #FFF;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.pointsCard {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 16px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.pointsLabel {
+  color: #FFF;
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 4px;
+}
+
+.pointsValue {
+  color: #FFF;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.content {
+  padding: 16px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--donor-text);
+  margin-bottom: 12px;
+}
+
+.rewardCard {
+  background-color: #FFF;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--donor-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.rewardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.pointsBadge {
+  background-color: rgba(46, 91, 255, 0.12); /* primaryBright + opacity */
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.pointsBadgeText {
+  color: var(--donor-primary-bright);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.rewardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--donor-text);
+  margin-bottom: 4px;
+}
+
+.rewardSponsor {
+  font-size: 14px;
+  color: var(--donor-primary-bright);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.rewardDesc {
+  font-size: 14px;
+  color: var(--donor-muted);
+  margin-bottom: 16px;
+  line-height: 20px;
+}
+
+.redeemBtn {
+  background-color: var(--donor-primary-bright);
+  color: #FFF;
+  border-radius: 8px;
+  padding: 12px;
+  width: 100%;
+  font-weight: 700;
+  font-size: 16px;
+  transition: opacity 0.2s;
+}
+
+.redeemBtnDisabled {
+  background-color: #C8D2E6;
+  cursor: not-allowed;
+}

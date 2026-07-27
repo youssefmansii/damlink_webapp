@@ -1,0 +1,260 @@
+.screen {
+  flex: 1;
+  background-color: var(--donor-bg);
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+.content {
+  padding: 16px;
+  padding-bottom: 32px;
+}
+
+.title {
+  color: var(--donor-text);
+  font-weight: 700;
+  font-size: 24px;
+}
+
+.subtitle {
+  margin-top: 4px;
+  color: var(--donor-muted);
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+/* ── Avatar Card ── */
+.avatarCard {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  padding: 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 14px;
+}
+
+.avatarWrap {
+  flex-shrink: 0;
+}
+
+.avatarImg {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  object-fit: cover;
+  border: 3px solid var(--donor-primary-bright);
+}
+
+.avatarInitials {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  background-color: var(--donor-primary-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: #FFFFFF;
+}
+
+.avatarInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--donor-text);
+}
+
+.phone {
+  margin-top: 2px;
+  color: var(--donor-muted);
+  font-size: 13px;
+}
+
+.email {
+  margin-top: 1px;
+  color: var(--donor-muted);
+  font-size: 12px;
+}
+
+.bloodBadge {
+  background-color: var(--donor-danger);
+  border-radius: 14px;
+  padding: 6px 12px;
+  flex-shrink: 0;
+}
+
+.bloodText {
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* ── Stats Row ── */
+.statsRow {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  padding: 16px;
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 14px;
+}
+
+.statBlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.statValue {
+  color: var(--donor-primary-bright);
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.statLabel {
+  color: var(--donor-muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.statDivider {
+  width: 1px;
+  background-color: var(--donor-border);
+}
+
+/* ── Card ── */
+.card {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.cardTitle {
+  color: var(--donor-text);
+  font-weight: 700;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.rowTextWrap {
+  flex: 1;
+}
+
+.rowTitle {
+  color: var(--donor-text);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.rowSub {
+  margin-top: 4px;
+  color: var(--donor-muted);
+  font-size: 12px;
+}
+
+/* ── Toggle ── */
+.toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background-color: #C8D2E6;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  flex-shrink: 0;
+}
+
+.toggleOn {
+  background-color: var(--donor-success);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background-color: #FFFFFF;
+  transition: transform 0.3s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(20px);
+}
+
+/* ── Nav Cards ── */
+.navCard {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  padding: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.navCard:hover {
+  background-color: #FAFBFF;
+}
+
+.navLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navText {
+  color: var(--donor-text);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* ── Sign Out ── */
+.signOutButton {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #FFF0F0;
+  border-radius: var(--radius-md);
+  border: 1px solid #FFCDD2;
+  padding: 14px;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.signOutButton:hover {
+  background-color: #FFE4E4;
+}
+
+.signOutText {
+  color: #DD1F2A;
+  font-weight: 700;
+  font-size: 15px;
+}

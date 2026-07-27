@@ -1,0 +1,399 @@
+.screen {
+  flex: 1;
+  background-color: var(--donor-bg);
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+.topSection {
+  background: linear-gradient(to right, #1A2E88, #1F3DA3);
+  padding: 12px 20px 20px 20px;
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.headerTitle {
+  color: #FFFFFF;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.switchModeBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 6px 12px;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.profileCard {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profileLeft {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background-color: var(--donor-primary-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 14px;
+}
+
+.avatarText {
+  color: #FFFFFF;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.name {
+  color: var(--donor-text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.activeRow {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activeDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+}
+
+.activeDotActive {
+  background-color: var(--donor-success);
+}
+
+.activeDotInactive {
+  background-color: #C8D2E6;
+}
+
+.activeText {
+  color: var(--donor-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rightSide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bloodBadge {
+  background-color: var(--donor-danger);
+  border-radius: 18px;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+}
+
+.bloodText {
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+/* Custom Switch for Web */
+.toggleSwitch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: #C8D2E6;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.toggleSwitch.active {
+  background-color: var(--donor-success);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  transition: transform 0.3s;
+  box-shadow: var(--shadow-sm);
+}
+
+.toggleSwitch.active .toggleThumb {
+  transform: translateX(20px);
+}
+
+.statsCard {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  margin: 16px 16px 0 16px;
+  padding: 18px 8px;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--donor-border);
+}
+
+.statItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.statValue {
+  color: var(--donor-primary-bright);
+  font-weight: 700;
+  font-size: 21px;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  color: var(--donor-muted);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.statDivider {
+  width: 1px;
+  background-color: var(--donor-border);
+}
+
+.lastDonationLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.lastDonationText {
+  color: var(--donor-primary-bright);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.sectionTitle {
+  margin: 18px 18px 10px 18px;
+  color: var(--donor-text);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.mapCard {
+  margin: 0 16px;
+  height: 170px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: #DDE6FB;
+  position: relative;
+  cursor: pointer;
+}
+
+.mapBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #E7EEF8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mapOverlay {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(26, 46, 136, 0.75);
+  border-radius: 10px;
+  padding: 5px 10px;
+}
+
+.mapOverlayText {
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.requestsCard {
+  margin: 0 16px;
+  border-radius: var(--radius-md);
+  background-color: #FFFFFF;
+  border: 1px solid var(--donor-border);
+  overflow: hidden;
+}
+
+.requestRow {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+}
+
+.requestRow:hover {
+  background-color: #FAFBFF;
+}
+
+.hospitalAvatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 23px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hospitalAvatarText {
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.requestInfo {
+  flex: 1;
+  margin-left: 10px;
+}
+
+.hospitalName {
+  color: var(--donor-text);
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.metaLine {
+  color: var(--donor-muted);
+  font-size: 12px;
+}
+
+.metaStrong {
+  font-weight: 700;
+}
+
+.urgencyLine {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.distanceBlock {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  gap: 2px;
+}
+
+.distanceText {
+  color: #7A8499;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.requestDivider {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 1px;
+  background-color: var(--donor-border);
+}
+
+.viewAllCard {
+  margin: 14px 16px 0 16px;
+  border-radius: var(--radius-md);
+  background-color: #FFFFFF;
+  border: 1px solid var(--donor-border);
+  padding: 16px 14px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.viewAllCard:hover {
+  background-color: #FAFBFF;
+}
+
+.viewAllIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 19px;
+  background-color: var(--donor-primary-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.viewAllTextBlock {
+  flex: 1;
+}
+
+.viewAllTitle {
+  color: var(--donor-text);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.viewAllSub {
+  color: var(--donor-muted);
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.emptyBox {
+  margin: 16px;
+  padding: 28px;
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--donor-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.emptyTitle {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--donor-text);
+}
+
+.emptySubtitle {
+  color: var(--donor-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
