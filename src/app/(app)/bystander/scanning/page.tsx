@@ -49,20 +49,25 @@ function ScanningContent() {
       const coords = await getCoordinates();
       let imageRef = `bystander/scan_${Date.now()}.jpg`;
 
-      if (imageUri) {
-        const res = await fetch(imageUri);
-        const blob = await res.blob();
-        const fileName = `scan_${Date.now()}.jpg`;
-        const { data: uploadData } = await supabase.storage
-          .from('scan-uploads')
-          .upload(`bystander/${fileName}`, blob, { contentType: 'image/jpeg', upsert: true });
+      // 1. Safe image upload (graceful fallback if bucket is missing)
+      if (imageUri && imageUri.startsWith('data:')) {
+        try {
+          const res = await fetch(imageUri);
+          const blob = await res.blob();
+          const fileName = `scan_${Date.now()}.jpg`;
+          const { data: uploadData } = await supabase.storage
+            .from('scan-uploads')
+            .upload(`bystander/${fileName}`, blob, { contentType: 'image/jpeg', upsert: true });
 
-        if (uploadData?.path) {
-          imageRef = uploadData.path;
+          if (uploadData?.path) {
+            imageRef = uploadData.path;
+          }
+        } catch (storageErr) {
+          console.warn('[Storage upload notice]:', storageErr);
         }
       }
 
-      // 1. Invoke Edge Function (on-victim-scan)
+      // 2. Invoke Edge Function (on-victim-scan)
       let edgeData: any = null;
       try {
         const { data, error } = await supabase.functions.invoke('on-victim-scan', {
@@ -78,14 +83,14 @@ function ScanningContent() {
         console.warn('[Edge function notice]:', e);
       }
 
-      // 2. Check for locally registered patient in session storage
+      // 3. Check for locally registered patient in session storage
       const regSession = sessionStorage.getItem('damlink_registered_patient');
       let registeredLocal: any = null;
       if (regSession) {
         try { registeredLocal = JSON.parse(regSession); } catch (e) {}
       }
 
-      // 3. Fetch live patients from Supabase database
+      // 4. Fetch live patients from Supabase database
       const { data: dbPatients } = await supabase
         .from('patients')
         .select('*')
@@ -112,7 +117,7 @@ function ScanningContent() {
           photo_url: target.photo_url || null,
         };
       } else {
-        // Default patient
+        // Default patient profile
         matchedPatientData = {
           id: '22222222-0000-0000-0000-000000000001',
           full_name: 'Youssef Essam Mansi',
@@ -122,7 +127,7 @@ function ScanningContent() {
         };
       }
 
-      // 4. Create or update emergency_requests row in Supabase WITH PATIENT_ID!
+      // 5. Create or update emergency_requests row in Supabase WITH PATIENT_ID!
       const { data: userAuth } = await supabase.auth.getUser();
       const currentUserId = userAuth?.user?.id || null;
       const locationPoint = `SRID=4326;POINT(${coords.lng} ${coords.lat})`;
@@ -160,7 +165,7 @@ function ScanningContent() {
         }
       }
 
-      // 5. Store result in session storage for Match Result screen
+      // 6. Store result in session storage for Match Result screen
       sessionStorage.setItem(
         'damlink_match_data',
         JSON.stringify({
