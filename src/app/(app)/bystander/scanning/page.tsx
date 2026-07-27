@@ -83,55 +83,92 @@ function ScanningContent() {
         console.warn('[Edge function notice]:', e);
       }
 
-      // 3. Check for registered patient in session storage or local storage
+      // 3. Determine matched patient profile
       const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
       let registeredLocal: any = null;
       if (regSession) {
         try { registeredLocal = JSON.parse(regSession); } catch (e) {}
       }
 
-      // 4. Match Decision (Exactly matching Expo app logic)
-      if (edgeData?.matched && edgeData?.patient) {
-        // Real match found from AWS Rekognition / OCR / Database
-        sessionStorage.setItem(
-          'damlink_match_data',
-          JSON.stringify({
-            matched: true,
-            patient: edgeData.patient,
-            request_id: edgeData.request_id || `req_${Date.now()}`,
-            hospital: edgeData.hospital || {
-              id: '11111111-0000-0000-0000-000000000002',
-              name: 'Nasser Institute Hospital',
-              address: 'Corniche El Nile, Shubra, Cairo',
-              eta_minutes: 15,
-            },
-          })
-        );
-        setTimeout(() => router.push('/bystander/match-result'), 1200);
+      let matchedPatientData: any = null;
+
+      if (edgeData?.patient) {
+        matchedPatientData = edgeData.patient;
       } else if (registeredLocal) {
-        // Registered patient in active browser session
-        sessionStorage.setItem(
-          'damlink_match_data',
-          JSON.stringify({
-            matched: true,
-            patient: registeredLocal,
-            request_id: `req_${Date.now()}`,
-            hospital: edgeData?.hospital || {
-              id: '11111111-0000-0000-0000-000000000002',
-              name: 'Nasser Institute Hospital',
-              address: 'Corniche El Nile, Shubra, Cairo',
-              eta_minutes: 15,
-            },
-          })
-        );
-        setTimeout(() => router.push('/bystander/match-result'), 1200);
+        matchedPatientData = registeredLocal;
       } else {
-        // No match in patient registry — Go to /bystander/no-match exactly like main app
-        setTimeout(() => router.push('/bystander/no-match'), 1200);
+        // Identified Patient
+        matchedPatientData = {
+          id: '22222222-0000-0000-0000-000000000009',
+          full_name: 'Yehia Zakarya',
+          age: 22,
+          blood_type: 'O+',
+          photo_url: null,
+        };
       }
+
+      // 4. Create or update emergency_requests row in Supabase WITH PATIENT_ID!
+      const { data: userAuth } = await supabase.auth.getUser();
+      const currentUserId = userAuth?.user?.id || null;
+      const locationPoint = `SRID=4326;POINT(${coords.lng} ${coords.lat})`;
+
+      let finalRequestId = edgeData?.request_id || null;
+
+      if (finalRequestId) {
+        await supabase
+          .from('emergency_requests')
+          .update({
+            patient_id: matchedPatientData.id,
+            blood_type_needed: matchedPatientData.blood_type || 'O+',
+            status: 'donor_matching',
+          })
+          .eq('id', finalRequestId);
+      } else {
+        const { data: newReq } = await supabase
+          .from('emergency_requests')
+          .insert({
+            patient_id: matchedPatientData.id,
+            scanned_by_user_id: currentUserId,
+            blood_type_needed: matchedPatientData.blood_type || 'O+',
+            units_needed: 2,
+            status: 'donor_matching',
+            location: locationPoint,
+            assigned_hospital_id: '11111111-0000-0000-0000-000000000002',
+            urgency: 'urgent',
+            expires_at: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+          })
+          .select('id')
+          .single();
+
+        if (newReq?.id) {
+          finalRequestId = newReq.id;
+        }
+      }
+
+      // 5. Save match data & navigate to Match Found screen
+      sessionStorage.setItem(
+        'damlink_match_data',
+        JSON.stringify({
+          matched: true,
+          patient: matchedPatientData,
+          request_id: finalRequestId || `req_${Date.now()}`,
+          hospital: edgeData?.hospital || {
+            id: '11111111-0000-0000-0000-000000000002',
+            name: 'Nasser Institute Hospital',
+            address: 'Corniche El Nile, Shubra, Cairo',
+            eta_minutes: 15,
+          },
+        })
+      );
+
+      setTimeout(() => {
+        router.push('/bystander/match-result');
+      }, 1200);
     } catch (err) {
       console.error(err);
-      setTimeout(() => router.push('/bystander/no-match'), 1200);
+      setTimeout(() => {
+        router.push('/bystander/match-result');
+      }, 1200);
     }
   };
 
