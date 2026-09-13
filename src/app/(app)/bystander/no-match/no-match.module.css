@@ -1,13 +1,14 @@
 .screen {
   min-height: 100vh;
-  background-color: var(--donor-bg-dark);
-  color: #FFFFFF;
+  background-color: var(--bystander-bg);
+  color: var(--bystander-text);
   display: flex;
   flex-direction: column;
+  padding-bottom: 90px;
 }
 
 .header {
-  background: linear-gradient(135deg, var(--donor-primary) 0%, var(--donor-primary-dark) 100%);
+  background: linear-gradient(135deg, var(--bystander-gradient-start) 0%, var(--bystander-gradient-end) 100%);
   padding: 1rem 1.25rem;
   display: flex;
   align-items: center;
@@ -18,8 +19,8 @@
   background: rgba(255, 255, 255, 0.15);
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -43,11 +44,12 @@
 }
 
 .statusCard {
-  background-color: var(--donor-card-bg);
-  border-radius: var(--donor-radius);
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
   padding: 1.5rem;
   text-align: center;
-  border: 1px solid var(--donor-border);
+  border: 1px solid var(--bystander-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .statusIconWrap {
@@ -60,22 +62,24 @@
   font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
+  color: var(--bystander-text);
 }
 
 .statusSub {
   font-size: 0.9rem;
-  color: var(--donor-text-muted);
+  color: var(--bystander-muted);
   line-height: 1.4;
 }
 
 .manualLookupCard {
-  background-color: var(--donor-card-bg);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--donor-radius);
+  background-color: #FFFFFF;
+  border: 1px solid var(--bystander-border);
+  border-radius: var(--radius-md);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .manualLookupHeader {
@@ -88,7 +92,7 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--donor-primary) 0%, var(--donor-primary-dark) 100%);
+  background: linear-gradient(135deg, var(--bystander-gradient-start) 0%, var(--bystander-gradient-end) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,10 +103,11 @@
   font-size: 1rem;
   font-weight: 700;
   margin: 0 0 0.25rem;
+  color: var(--bystander-text);
 }
 
 .manualLookupSub {
-  color: var(--donor-text-muted);
+  color: var(--bystander-muted);
   font-size: 0.85rem;
   line-height: 1.35;
   margin: 0;
@@ -117,19 +122,23 @@
 .textInput {
   min-width: 0;
   min-height: 48px;
-  background-color: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--donor-border);
-  border-radius: var(--donor-radius);
+  background-color: #FFFFFF;
+  border: 1px solid var(--bystander-border);
+  border-radius: var(--radius-sm);
   padding: 0.75rem 0.9rem;
-  color: #FFFFFF;
+  color: var(--bystander-text);
   font-size: 1rem;
   font-variant-numeric: tabular-nums;
 
   &:focus {
     outline: none;
-    border-color: var(--donor-primary-bright);
+    border-color: var(--bystander-primary-bright);
     box-shadow: 0 0 0 3px rgba(221, 31, 42, 0.18);
   }
+}
+
+.textInput::placeholder {
+  color: #9b6a6a;
 }
 
 .inputError {
@@ -139,9 +148,9 @@
 .lookupBtn {
   min-height: 48px;
   border: none;
-  border-radius: var(--donor-radius);
+  border-radius: var(--radius-md);
   padding: 0 1rem;
-  background: linear-gradient(135deg, var(--donor-primary) 0%, var(--donor-primary-dark) 100%);
+  background: linear-gradient(135deg, var(--bystander-gradient-start) 0%, var(--bystander-gradient-end) 100%);
   color: #FFFFFF;
   font-weight: 700;
   display: inline-flex;
@@ -164,9 +173,9 @@
 }
 
 .callBtn {
-  background-color: #1EA35A;
+  background-color: var(--bystander-success);
   color: #FFFFFF;
-  border-radius: var(--donor-radius);
+  border-radius: var(--radius-md);
   padding: 0.85rem;
   display: flex;
   align-items: center;
@@ -190,12 +199,12 @@
 .divider {
   flex: 1;
   height: 1px;
-  background-color: var(--donor-border);
+  background-color: var(--bystander-border);
 }
 
 .dividerText {
   font-size: 0.8rem;
-  color: var(--donor-text-muted);
+  color: var(--bystander-muted);
 }
 
 .form {
@@ -213,22 +222,27 @@
 .fieldLabel {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--donor-text-muted);
+  color: var(--bystander-muted);
 }
 
 .textarea {
-  background-color: var(--donor-card-bg);
-  border: 1px solid var(--donor-border);
-  border-radius: var(--donor-radius);
+  background-color: #FFFFFF;
+  border: 1px solid var(--bystander-border);
+  border-radius: var(--radius-sm);
   padding: 0.75rem 1rem;
-  color: #FFFFFF;
+  color: var(--bystander-text);
   font-size: 0.95rem;
   resize: vertical;
 
   &:focus {
     outline: none;
-    border-color: var(--donor-primary-bright);
+    border-color: var(--bystander-primary-bright);
+    box-shadow: 0 0 0 3px rgba(221, 31, 42, 0.14);
   }
+}
+
+.textarea::placeholder {
+  color: #9b6a6a;
 }
 
 @media (max-width: 420px) {
@@ -248,9 +262,9 @@
 }
 
 .bloodChip {
-  background-color: var(--donor-card-bg);
-  border: 1px solid var(--donor-border);
-  color: var(--donor-text-muted);
+  background-color: #FFFFFF;
+  border: 1px solid var(--bystander-border);
+  color: var(--bystander-muted);
   border-radius: 9999px;
   padding: 0.4rem 0.85rem;
   font-size: 0.85rem;
@@ -258,21 +272,21 @@
   cursor: pointer;
 
   &:hover {
-    border-color: var(--donor-primary-bright);
-    color: #FFFFFF;
+    border-color: var(--bystander-primary-bright);
+    color: var(--bystander-text);
   }
 }
 
 .bloodChipActive {
-  background-color: var(--donor-primary);
-  border-color: var(--donor-primary-bright);
+  background-color: var(--bystander-primary-bright);
+  border-color: var(--bystander-primary-bright);
   color: #FFFFFF;
 }
 
 .submitBtn {
-  background: linear-gradient(135deg, var(--donor-primary) 0%, var(--donor-primary-dark) 100%);
+  background: linear-gradient(135deg, var(--bystander-gradient-start) 0%, var(--bystander-gradient-end) 100%);
   border: none;
-  border-radius: var(--donor-radius);
+  border-radius: var(--radius-md);
   padding: 0.9rem;
   color: #FFFFFF;
   font-size: 1rem;
@@ -291,10 +305,10 @@
 
 .retryBtn {
   background: transparent;
-  border: 1px solid var(--donor-border);
-  border-radius: var(--donor-radius);
+  border: 1px solid var(--bystander-border);
+  border-radius: var(--radius-md);
   padding: 0.75rem;
-  color: var(--donor-text-muted);
+  color: var(--bystander-muted);
   font-weight: 600;
   font-size: 0.9rem;
   display: flex;
@@ -304,7 +318,18 @@
   cursor: pointer;
 
   &:hover {
-    border-color: #FFFFFF;
-    color: #FFFFFF;
+    border-color: var(--bystander-primary-bright);
+    color: var(--bystander-primary-bright);
   }
+}
+
+.backBtn:focus-visible,
+.textInput:focus-visible,
+.lookupBtn:focus-visible,
+.callBtn:focus-visible,
+.bloodChip:focus-visible,
+.submitBtn:focus-visible,
+.retryBtn:focus-visible {
+  outline: 3px solid rgba(221, 31, 42, 0.35);
+  outline-offset: 2px;
 }
