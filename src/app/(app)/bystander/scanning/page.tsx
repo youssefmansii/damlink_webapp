@@ -75,24 +75,6 @@ function ScanningContent() {
         base64Payload = imageUri.split(',')[1];
       }
 
-      // Safe storage upload
-      if (imageUri && imageUri.startsWith('data:')) {
-        try {
-          const res = await fetch(imageUri);
-          const blob = await res.blob();
-          const fileName = `scan_${Date.now()}.jpg`;
-          const { data: uploadData } = await supabase.storage
-            .from('scan-uploads')
-            .upload(`bystander/${fileName}`, blob, { contentType: 'image/jpeg', upsert: true });
-
-          if (uploadData?.path) {
-            imageRef = uploadData.path;
-          }
-        } catch (storageErr) {
-          console.warn('[Storage upload notice]:', storageErr);
-        }
-      }
-
       // Invoke the on-victim-scan Edge Function
       const { data, error } = await supabase.functions.invoke('on-victim-scan', {
         body: {
@@ -103,6 +85,10 @@ function ScanningContent() {
           bystander_lng: coords.lng,
         },
       });
+
+      if (error) {
+        throw error;
+      }
 
       let patientObj = data?.patient;
 
