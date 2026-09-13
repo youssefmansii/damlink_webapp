@@ -52,10 +52,62 @@ function ScanContent() {
   const [showWebcamModal, setShowWebcamModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const webcamRef = useRef<Webcam>(null);
+  const guideRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const cropDocumentFromVideo = () => {
+    const video = webcamRef.current?.video as HTMLVideoElement | null;
+    const guide = guideRef.current;
+
+    if (!video || !guide || !video.videoWidth || !video.videoHeight) {
+      return null;
+    }
+
+    const videoRect = video.getBoundingClientRect();
+    const guideRect = guide.getBoundingClientRect();
+    const sourceWidth = video.videoWidth;
+    const sourceHeight = video.videoHeight;
+    const sourceAspect = sourceWidth / sourceHeight;
+    const viewAspect = videoRect.width / videoRect.height;
+
+    let scale = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (sourceAspect > viewAspect) {
+      scale = videoRect.height / sourceHeight;
+      const renderedWidth = sourceWidth * scale;
+      offsetX = (renderedWidth - videoRect.width) / 2;
+    } else {
+      scale = videoRect.width / sourceWidth;
+      const renderedHeight = sourceHeight * scale;
+      offsetY = (renderedHeight - videoRect.height) / 2;
+    }
+
+    const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+    const sx = clamp((guideRect.left - videoRect.left + offsetX) / scale, 0, sourceWidth - 1);
+    const sy = clamp((guideRect.top - videoRect.top + offsetY) / scale, 0, sourceHeight - 1);
+    const sw = clamp(guideRect.width / scale, 1, Math.max(1, sourceWidth - sx));
+    const sh = clamp(guideRect.height / scale, 1, Math.max(1, sourceHeight - sy));
+
+    const maxOutputWidth = 1600;
+    const outputScale = Math.min(1, maxOutputWidth / sw);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(sw * outputScale);
+    canvas.height = Math.round(sh * outputScale);
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.92);
+  };
+
   const handleCaptureWebcam = () => {
-    const imageSrc = webcamRef.current?.getScreenshot();
+    const imageSrc = isDocumentMode
+      ? cropDocumentFromVideo() || webcamRef.current?.getScreenshot()
+      : webcamRef.current?.getScreenshot();
+
     if (imageSrc) {
       setCapturedUri(imageSrc);
       setShowWebcamModal(false);
@@ -215,7 +267,7 @@ function ScanContent() {
           />
 
           <div className={styles.scanOverlay} aria-hidden="true">
-            <div className={guideClassName}>
+            <div ref={guideRef} className={guideClassName}>
               <span className={`${styles.corner} ${styles.cornerTopLeft}`} />
               <span className={`${styles.corner} ${styles.cornerTopRight}`} />
               <span className={`${styles.corner} ${styles.cornerBottomLeft}`} />
