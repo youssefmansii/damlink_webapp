@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, AlertCircle, Phone, Bell, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Phone, Bell, Loader2, RefreshCw, CreditCard, Search } from 'lucide-react';
 import styles from './no-match.module.css';
 
 const BLOOD_TYPES = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'Unknown'];
@@ -15,6 +15,78 @@ export default function NoMatchScreen() {
   const [estimatedBloodType, setEstimatedBloodType] = useState('Unknown');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [manualNationalId, setManualNationalId] = useState('');
+  const [manualIdError, setManualIdError] = useState('');
+  const [manualIdSearching, setManualIdSearching] = useState(false);
+
+  const normalizeNationalId = (value: string) => {
+    return value
+      .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString())
+      .replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString())
+      .replace(/\D/g, '');
+  };
+
+  const getCoordinates = (): Promise<{ lat: number; lng: number }> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ lat: 30.0444, lng: 31.2357 });
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => resolve({ lat: 30.0444, lng: 31.2357 })
+      );
+    });
+  };
+
+  const handleManualIdLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const nationalId = normalizeNationalId(manualNationalId);
+    if (!/^[23]\d{13}$/.test(nationalId)) {
+      setManualIdError('Enter a valid 14-digit Egyptian National ID.');
+      return;
+    }
+
+    setManualIdError('');
+    setManualIdSearching(true);
+
+    try {
+      const coords = await getCoordinates();
+      const { data, error } = await supabase.functions.invoke('on-victim-scan', {
+        body: {
+          scan_mode: 'manual',
+          manual_national_id: nationalId,
+          bystander_lat: coords.lat,
+          bystander_lng: coords.lng,
+        },
+      });
+
+      if (error) throw error;
+
+      if (!data?.matched || !data?.patient) {
+        setManualIdError('No patient record found for this National ID.');
+        return;
+      }
+
+      sessionStorage.setItem(
+        'damlink_match_data',
+        JSON.stringify({
+          matched: true,
+          patient: data.patient,
+          request_id: data.request_id || `req_${Date.now()}`,
+          hospital: data.hospital,
+        })
+      );
+      router.push('/bystander/match-result');
+    } catch (err) {
+      console.error('[NoMatch] Manual ID lookup error:', err);
+      setManualIdError('Could not check this ID right now. Please try again.');
+    } finally {
+      setManualIdSearching(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +102,7 @@ export default function NoMatchScreen() {
       const currentUserId = userAuth?.user?.id || null;
 
       // Insert emergency request for unidentified victim
-      const { data: requestData, error: requestError } = await supabase
+      const { error: requestError } = await supabase
         .from('emergency_requests')
         .insert({
           patient_id: null,
@@ -80,9 +152,60 @@ export default function NoMatchScreen() {
           </div>
           <h2 className={styles.statusTitle}>No Registry Match Found</h2>
           <p className={styles.statusSub}>
-            We couldn't identify the victim in our registry. You can still alert emergency services with a manual description.
+            We could not identify the victim in our registry. You can still alert emergency services with a manual description.
           </p>
         </div>
+
+        <form className={styles.manualLookupCard} onSubmit={handleManualIdLookup}>
+          <div className={styles.manualLookupHeader}>
+            <div className={styles.manualLookupIcon}>
+              <CreditCard size={20} color="#FFFFFF" />
+            </div>
+            <div>
+              <h3 className={styles.manualLookupTitle}>Enter National ID</h3>
+              <p className={styles.manualLookupSub}>Use the 14-digit number if it is readable.</p>
+            </div>
+          </div>
+
+          <label className={styles.fieldLabel} htmlFor="manual-national-id">
+            Egyptian National ID
+          </label>
+          <div className={styles.manualIdRow}>
+            <input
+              id="manual-national-id"
+              className={`${styles.textInput} ${manualIdError ? styles.inputError : ''}`}
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={20}
+              placeholder="30408042101277"
+              value={manualNationalId}
+              onChange={(e) => {
+                setManualNationalId(e.target.value);
+                if (manualIdError) setManualIdError('');
+              }}
+              aria-invalid={manualIdError ? 'true' : 'false'}
+              aria-describedby={manualIdError ? 'manual-national-id-error' : undefined}
+            />
+            <button
+              type="submit"
+              className={styles.lookupBtn}
+              disabled={manualIdSearching}
+              aria-label="Find patient by National ID"
+            >
+              {manualIdSearching ? (
+                <Loader2 size={18} color="#FFFFFF" className="animate-spin" />
+              ) : (
+                <Search size={18} color="#FFFFFF" />
+              )}
+              <span>Find</span>
+            </button>
+          </div>
+          {manualIdError && (
+            <p id="manual-national-id-error" className={styles.fieldError} role="alert">
+              {manualIdError}
+            </p>
+          )}
+        </form>
 
         {/* Emergency Call CTA */}
         <a href="tel:123" className={styles.callBtn}>
@@ -92,7 +215,7 @@ export default function NoMatchScreen() {
 
         <div className={styles.dividerRow}>
           <div className={styles.divider} />
-          <span className={styles.dividerText}>or provide manual description</span>
+          <span className={styles.dividerText}>or continue as unidentified</span>
           <div className={styles.divider} />
         </div>
 
