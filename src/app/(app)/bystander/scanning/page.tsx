@@ -15,13 +15,13 @@ const STEP_LABELS: Record<string, string[]> = {
   ],
   national_id: [
     'Uploading image securely…',
-    'Running OCR on National ID (Google ML Kit)…',
-    'Extracting identity fields…',
+    'Running Egyptian National ID OCR…',
+    'Validating extracted ID number…',
     'Looking up patient record…',
   ],
   drivers_license: [
     'Uploading image securely…',
-    "Running OCR on Driver's License…",
+    "Running Google Cloud Vision on Driver's License…",
     'Extracting identity fields…',
     'Looking up patient record…',
   ],

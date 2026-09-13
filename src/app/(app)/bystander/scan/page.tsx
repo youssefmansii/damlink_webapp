@@ -23,10 +23,17 @@ const MODE_ICONS: Record<ScanMode, any> = {
 };
 
 const MODE_INSTRUCTIONS: Record<ScanMode, string> = {
-  face: "Position the victim's face clearly in frame. Ensure good lighting and minimal obstructions.",
-  national_id: 'Capture the front of the National ID card. Ensure all text is clearly visible.',
-  drivers_license: "Capture the front of the driver's license. Ensure the name and photo are visible.",
-  university_id: 'Capture the university ID card. Ensure the name and photo are clearly visible.',
+  face: "Position the victim's face inside the oval. Keep the face well lit and unobstructed.",
+  national_id: 'Place the front of the National ID inside the rectangle. Keep the number line sharp and visible.',
+  drivers_license: "Place the front of the driver's license inside the rectangle. Keep the name and photo visible.",
+  university_id: 'Place the university ID inside the rectangle. Keep the name and photo clearly visible.',
+};
+
+const GUIDE_LABELS: Record<ScanMode, string> = {
+  face: 'Align face inside frame',
+  national_id: 'Align National ID inside frame',
+  drivers_license: "Align driver's license inside frame",
+  university_id: 'Align university ID inside frame',
 };
 
 function ScanContent() {
@@ -80,6 +87,8 @@ function ScanContent() {
   };
 
   const SelectedIcon = MODE_ICONS[selectedMode] || User;
+  const isDocumentMode = selectedMode !== 'face';
+  const guideClassName = isDocumentMode ? styles.cardGuide : styles.faceGuide;
 
   return (
     <div className={styles.screen}>
@@ -139,12 +148,12 @@ function ScanContent() {
         )}
 
         {/* Action Buttons */}
-        <button className={styles.captureButton} onClick={() => setShowWebcamModal(true)}>
+        <button type="button" className={styles.captureButton} onClick={() => setShowWebcamModal(true)}>
           <Camera size={22} color="#FFFFFF" />
           <span>{capturedUri ? 'Retake with Camera' : 'Open Camera'}</span>
         </button>
 
-        <button className={styles.galleryButton} onClick={() => fileInputRef.current?.click()}>
+        <button type="button" className={styles.galleryButton} onClick={() => fileInputRef.current?.click()}>
           <ImageIcon size={20} color="#DD1F2A" />
           <span>Choose from Gallery</span>
         </button>
@@ -159,6 +168,7 @@ function ScanContent() {
         {/* Submit Button (Appears when image captured) */}
         {capturedUri && (
           <button
+            type="button"
             className={styles.submitButton}
             onClick={handleSubmitScan}
             disabled={submitting}
@@ -182,20 +192,44 @@ function ScanContent() {
       {/* Camera Viewfinder Modal */}
       {showWebcamModal && (
         <div className={styles.webcamModal}>
-          <button className={styles.closeWebcamBtn} onClick={() => setShowWebcamModal(false)}>
+          <button
+            type="button"
+            className={styles.closeWebcamBtn}
+            onClick={() => setShowWebcamModal(false)}
+            aria-label="Close camera"
+          >
             <X size={24} color="#FFFFFF" />
           </button>
+
+          <div className={styles.webcamHeader}>
+            <span className={styles.webcamTitle}>{MODE_LABELS[selectedMode]}</span>
+            <span className={styles.webcamHint}>{GUIDE_LABELS[selectedMode]}</span>
+          </div>
 
           <Webcam
             audio={false}
             ref={webcamRef}
             screenshotFormat="image/jpeg"
-            videoConstraints={{ facingMode: 'user' }}
+            videoConstraints={{ facingMode: selectedMode === 'face' ? 'user' : 'environment' }}
             className={styles.webcamView}
           />
 
+          <div className={styles.scanOverlay} aria-hidden="true">
+            <div className={guideClassName}>
+              <span className={`${styles.corner} ${styles.cornerTopLeft}`} />
+              <span className={`${styles.corner} ${styles.cornerTopRight}`} />
+              <span className={`${styles.corner} ${styles.cornerBottomLeft}`} />
+              <span className={`${styles.corner} ${styles.cornerBottomRight}`} />
+            </div>
+          </div>
+
           <div className={styles.snapBtnWrap}>
-            <button className={styles.snapBtn} onClick={handleCaptureWebcam}>
+            <button
+              type="button"
+              className={styles.snapBtn}
+              onClick={handleCaptureWebcam}
+              aria-label="Capture scan image"
+            >
               <Camera size={32} color="#DD1F2A" />
             </button>
           </div>
