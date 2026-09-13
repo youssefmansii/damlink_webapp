@@ -27,42 +27,7 @@ export default function MatchResultScreen() {
       }
     }
 
-    // Check session or local storage fallback
-    const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
-    if (regSession) {
-      try {
-        const p = JSON.parse(regSession);
-        setMatchData({
-          matched: true,
-          patient: p,
-          request_id: 'req-live-123',
-          hospital: {
-            id: '11111111-0000-0000-0000-000000000002',
-            name: 'Cairo University Hospital',
-            eta_minutes: 15,
-          },
-        });
-        return;
-      } catch (e) {}
-    }
-
-    // Default real database patient
-    setMatchData({
-      matched: true,
-      patient: {
-        id: '22222222-0000-0000-0000-000000000009',
-        full_name: 'Yehia Zakarya',
-        age: 22,
-        blood_type: 'O+',
-        photo_url: sessionStorage.getItem('damlink_scan_image') || null,
-      },
-      request_id: 'demo-req-123',
-      hospital: {
-        id: '11111111-0000-0000-0000-000000000002',
-        name: 'Cairo University Hospital',
-        eta_minutes: 15,
-      },
-    });
+    router.replace('/bystander/no-match?reason=missing_scan_result');
   };
 
   const handleNotify = async () => {
@@ -114,11 +79,19 @@ export default function MatchResultScreen() {
     return `https://nvisctcecmklbvnytcka.supabase.co/storage/v1/object/public/scan-uploads/${cleanPath}`;
   };
 
-  const patientName = matchData?.patient?.full_name || 'Yehia Zakarya';
-  const patientAge = matchData?.patient?.age ?? 22;
-  const bloodType = matchData?.patient?.blood_type || 'O+';
-  const hospitalName = matchData?.hospital?.name || 'Cairo University Hospital';
-  const hospitalEta = matchData?.hospital?.eta_minutes || 15;
+  if (!matchData) {
+    return (
+      <div className={styles.screen}>
+        <div className={styles.content}>Loading match result...</div>
+      </div>
+    );
+  }
+
+  const patientName = matchData.patient.full_name;
+  const patientAge = matchData.patient.age ?? 'Unknown';
+  const bloodType = matchData.patient.blood_type || 'Unknown';
+  const hospitalName = matchData.hospital?.name || 'Nearest hospital pending';
+  const hospitalEta = matchData.hospital?.eta_minutes || 15;
   const photoSrc = getPhotoSrc(matchData?.patient?.photo_url);
 
   const initials = patientName

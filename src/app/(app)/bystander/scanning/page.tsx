@@ -90,35 +90,11 @@ function ScanningContent() {
         throw error;
       }
 
-      let patientObj = data?.patient;
+      const patientObj = data?.patient;
 
-      // Check for locally registered patient override
-      const regSession = sessionStorage.getItem('damlink_registered_patient') || localStorage.getItem('damlink_registered_patient');
-      let registeredLocal: any = null;
-      if (regSession) {
-        try { registeredLocal = JSON.parse(regSession); } catch (e) {}
-      }
-
-      if (registeredLocal) {
-        patientObj = registeredLocal;
-      } else if (!patientObj || patientObj.full_name === 'Khaled Mostafa') {
-        if (mode === 'national_id' || mode === 'drivers_license' || mode === 'university_id' || mode === 'id') {
-          patientObj = {
-            id: '22222222-0000-0000-0000-000000000001',
-            full_name: 'Youssef Essam Mansi',
-            age: 21,
-            blood_type: 'A-',
-            photo_url: imageUri || null,
-          };
-        } else {
-          patientObj = {
-            id: '22222222-0000-0000-0000-000000000009',
-            full_name: 'Yehia Zakarya',
-            age: 22,
-            blood_type: 'O+',
-            photo_url: imageUri || null,
-          };
-        }
+      if (!data?.matched || !patientObj) {
+        router.push(`/bystander/no-match?reason=no_match&mode=${mode}`);
+        return;
       }
 
       // Attach snapped image if photo_url is empty
