@@ -3,7 +3,23 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, Camera, Image as ImageIcon, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Camera,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Image as ImageIcon,
+  Loader2,
+  Save,
+  ShieldCheck,
+} from 'lucide-react';
+import {
+  defaultDonorEligibilityAnswers,
+  evaluateDonorEligibility,
+  type DonorEligibilityAnswers,
+} from '@/lib/donorEligibility';
 import styles from './register.module.css';
 
 const BLOOD_TYPES = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
@@ -13,19 +29,23 @@ export default function PatientRegisterScreen() {
 
   // Form state
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [nationalId, setNationalId] = useState('');
-  const [dob, setDob] = useState('1995-06-15');
+  const [dob, setDob] = useState('');
   const [bloodType, setBloodType] = useState('A-');
-  const [medicalConditions, setMedicalConditions] = useState('Hypertension, Penicillin Allergy');
+  const [medicalConditions, setMedicalConditions] = useState('');
+  const [isActiveDonor, setIsActiveDonor] = useState(false);
+  const [eligibilityAnswers, setEligibilityAnswers] = useState<DonorEligibilityAnswers>(defaultDonorEligibilityAnswers);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Image states
+  // Image state
   const [faceImage, setFaceImage] = useState<string | null>(null);
   const [faceBlob, setFaceBlob] = useState<Blob | null>(null);
-  const [idImage, setIdImage] = useState<string | null>(null);
-  const [idBlob, setIdBlob] = useState<Blob | null>(null);
 
   // Modal / Camera state
-  const [activeCamMode, setActiveCamMode] = useState<'face' | 'id' | null>(null);
+  const [activeCamMode, setActiveCamMode] = useState<'face' | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -34,24 +54,29 @@ export default function PatientRegisterScreen() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const eligibility = evaluateDonorEligibility(eligibilityAnswers, dob);
+  const canActivateDonor = eligibility.status === 'eligible';
+
+  const updateEligibility = <K extends keyof DonorEligibilityAnswers>(
+    key: K,
+    value: DonorEligibilityAnswers[K],
+  ) => {
+    setEligibilityAnswers((current) => ({ ...current, [key]: value }));
+  };
+
   // Handle File Input Selection
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, mode: 'face' | 'id') => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const url = URL.createObjectURL(file);
-    if (mode === 'face') {
-      setFaceImage(url);
-      setFaceBlob(file);
-    } else {
-      setIdImage(url);
-      setIdBlob(file);
-    }
+    setFaceImage(url);
+    setFaceBlob(file);
   };
 
   // Open Webcam Modal
-  const startCamera = async (mode: 'face' | 'id') => {
-    setActiveCamMode(mode);
+  const startCamera = async () => {
+    setActiveCamMode('face');
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
@@ -78,13 +103,8 @@ export default function PatientRegisterScreen() {
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
-          if (activeCamMode === 'face') {
-            setFaceImage(url);
-            setFaceBlob(blob);
-          } else {
-            setIdImage(url);
-            setIdBlob(blob);
-          }
+          setFaceImage(url);
+          setFaceBlob(blob);
         }
       }, 'image/jpeg', 0.85);
     }
@@ -107,15 +127,73 @@ export default function PatientRegisterScreen() {
       setError('Full Name is required.');
       return;
     }
+    if (!email.trim()) {
+      setError('Email is required so the patient can sign in later.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (nationalId.trim() && !/^\d{14}$/.test(nationalId.trim())) {
+      setError('National ID must be 14 digits.');
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      let facePath = '';
-      let idPath = '';
+      // 1. Create the auth account first. This person can now sign in and edit their data.
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            phone: phone.trim(),
+            blood_type: bloodType,
+            role: 'patient_donor',
+          },
+        },
+      });
 
-      // 1. Upload Face Image to Supabase Storage if available
+      if (signUpError) throw signUpError;
+      const user = authData.user;
+      if (!user) throw new Error('Could not create the user account.');
+
+      const { error: profileErr } = await supabase.from('profiles').upsert({
+        id: user.id,
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+        blood_type: bloodType,
+        is_donor_registered: true,
+      });
+
+      if (profileErr) throw profileErr;
+
+      const donorIsActive = isActiveDonor && canActivateDonor;
+
+      const { error: donorErr } = await supabase.from('donor_profiles').upsert({
+        user_id: user.id,
+        is_active: donorIsActive,
+        donor_weight_kg: eligibilityAnswers.weightKg ? Number(eligibilityAnswers.weightKg) : null,
+        donor_last_donation_date: eligibilityAnswers.lastDonationDate || null,
+        donor_health_answers: eligibilityAnswers,
+        donor_eligibility_status: eligibility.status,
+        donor_eligibility_reasons: eligibility.reasons,
+        donor_eligibility_checked_at: new Date().toISOString(),
+        donations_count: 0,
+        lives_saved_estimate: 0,
+        reliability_rating: 5.0,
+        points_balance: 100,
+      });
+
+      if (donorErr) throw donorErr;
+
+      let facePath = '';
+
+      // 2. Upload Face Image to Supabase Storage if available
       if (faceBlob) {
         try {
           const fileName = `patient-faces/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
@@ -131,43 +209,55 @@ export default function PatientRegisterScreen() {
         }
       }
 
-      // 2. Upload ID Image to Supabase Storage if available
-      if (idBlob) {
-        try {
-          const fileName = `patient-ids/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-          const { data: storageData } = await supabase.storage
-            .from('scan-uploads')
-            .upload(fileName, idBlob, { contentType: 'image/jpeg' });
-
-          if (storageData?.path) {
-            idPath = storageData.path;
-          }
-        } catch (sErr) {
-          console.warn('[Storage upload notice]:', sErr);
-        }
-      }
-
-      // 3. Insert into Supabase `patients` table
-      const conditionsArray = medicalConditions
-        ? medicalConditions.split(',').map((s) => s.trim()).filter(Boolean)
-        : [];
-
       const ageCalculated = dob
         ? Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
         : 21;
 
-      const { data: patient, error: insertErr } = await supabase
-        .from('patients')
-        .insert({
+      // 3. Create the linked patient record through the Edge Function so Rekognition indexing still works.
+      let patient: any = null;
+      const { data: fnData, error: fnErr } = await supabase.functions.invoke('register-patient', {
+        body: {
+          profile_id: user.id,
           full_name: fullName.trim(),
-          national_id_hash: nationalId.trim() || null,
-          dob: dob || null,
+          dob,
+          blood_type: bloodType,
+          medical_conditions: medicalConditions,
+          national_id_hash: nationalId.trim(),
+          face_image_path: facePath,
+        },
+      });
+
+      if (fnErr) {
+        console.warn('[Edge Function Notice]:', fnErr);
+
+        const conditionsArray = medicalConditions
+          ? medicalConditions.split(',').map((s) => s.trim()).filter(Boolean)
+          : [];
+
+        const { data: fallbackPatient, error: insertErr } = await supabase
+          .from('patients')
+          .insert({
+            profile_id: user.id,
+            full_name: fullName.trim(),
+            national_id_hash: nationalId.trim() || null,
+            dob: dob || null,
+            blood_type: bloodType,
+            photo_url: facePath || faceImage || null,
+            medical_conditions: conditionsArray,
+          })
+          .select()
+          .single();
+
+        if (insertErr) throw insertErr;
+        patient = fallbackPatient;
+      } else {
+        patient = {
+          id: fnData?.patient_id,
+          full_name: fullName.trim(),
           blood_type: bloodType,
           photo_url: facePath || faceImage || null,
-          medical_conditions: conditionsArray,
-        })
-        .select()
-        .single();
+        };
+      }
 
       const registeredPatientObj = {
         id: patient?.id || `pat_${Date.now()}`,
@@ -177,27 +267,13 @@ export default function PatientRegisterScreen() {
         photo_url: facePath || faceImage || null,
       };
 
-      // Save in BOTH localStorage & sessionStorage so face scan matches instantly!
       localStorage.setItem('damlink_registered_patient', JSON.stringify(registeredPatientObj));
       sessionStorage.setItem('damlink_registered_patient', JSON.stringify(registeredPatientObj));
+      localStorage.setItem('damlink_mode', 'donor');
 
-      // 4. Invoke Edge Function (register-patient) if deployed
-      try {
-        await supabase.functions.invoke('register-patient', {
-          body: {
-            full_name: fullName.trim(),
-            dob,
-            blood_type: bloodType,
-            medical_conditions: medicalConditions,
-            national_id_hash: nationalId.trim(),
-            face_image_path: facePath,
-            id_image_path: idPath,
-          },
-        });
-      } catch (fnErr) {
-        console.log('[Edge Function Notice]:', fnErr);
+      if (isActiveDonor && !canActivateDonor) {
+        setIsActiveDonor(false);
       }
-
       setSuccess(true);
     } catch (err: any) {
       console.error('[Patient Register Error]:', err);
@@ -214,7 +290,10 @@ export default function PatientRegisterScreen() {
         <button className={styles.backBtn} onClick={() => router.back()}>
           <ArrowLeft size={20} color="#FFFFFF" />
         </button>
-        <h1 className={styles.headerTitle}>Register Patient</h1>
+        <div>
+          <h1 className={styles.headerTitle}>Create DamLink Account</h1>
+          <p className={styles.headerSub}>Patient profile plus optional donor alerts</p>
+        </div>
       </div>
 
       {/* Form Card */}
@@ -222,16 +301,16 @@ export default function PatientRegisterScreen() {
         {success ? (
           <div className={styles.successState}>
             <CheckCircle2 size={54} color="#1EA35A" />
-            <h2 className={styles.successTitle}>Patient Registered Successfully!</h2>
+            <h2 className={styles.successTitle}>Account Created Successfully</h2>
             <p className={styles.successSub}>
-              Patient <strong>{fullName}</strong> ({bloodType}) has been stored in the database and indexed for AI face recognition.
+              <strong>{fullName}</strong> now has a patient medical profile and a donor account. Donor alerts are {isActiveDonor ? 'active' : 'paused'}.
             </p>
             <div className={styles.successActions}>
-              <button className={styles.primaryBtn} onClick={() => router.push('/bystander/scan')}>
-                🚨 Try Scanning Victim Now
+              <button className={styles.primaryBtn} onClick={() => router.push('/profile')}>
+                Open Profile Settings
               </button>
-              <button className={styles.secondaryBtn} onClick={() => router.push('/')}>
-                Go to Sign In
+              <button className={styles.secondaryBtn} onClick={() => router.push('/donor')}>
+                Go to Donor Dashboard
               </button>
             </div>
           </div>
@@ -244,67 +323,9 @@ export default function PatientRegisterScreen() {
               </div>
             )}
 
-            {/* Section 1: Face Photo */}
+            {/* Section 1: Account */}
             <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>1. Face Photo (Required for Rekognition)</h2>
-              <div className={styles.photoBox}>
-                {faceImage ? (
-                  <img src={faceImage} alt="Patient Face" className={styles.previewImage} />
-                ) : (
-                  <div className={styles.photoPlaceholder}>
-                    <Camera size={36} color="#A0AABB" />
-                    <span className={styles.photoText}>Take Selfie or Upload Face</span>
-                  </div>
-                )}
-              </div>
-              <div className={styles.photoBtns}>
-                <button type="button" className={styles.photoActionBtn} onClick={() => startCamera('face')}>
-                  <Camera size={16} color="#FFFFFF" /> Snap Selfie
-                </button>
-                <label className={styles.photoUploadLabel}>
-                  <ImageIcon size={16} color="var(--donor-primary-bright)" /> Choose File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileSelect(e, 'face')}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Section 2: ID Photo */}
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>2. National ID Photo (Optional)</h2>
-              <div className={styles.photoBox}>
-                {idImage ? (
-                  <img src={idImage} alt="ID Document" className={styles.previewImage} />
-                ) : (
-                  <div className={styles.photoPlaceholder}>
-                    <ImageIcon size={36} color="#A0AABB" />
-                    <span className={styles.photoText}>Scan National ID Card</span>
-                  </div>
-                )}
-              </div>
-              <div className={styles.photoBtns}>
-                <button type="button" className={styles.photoActionBtn} onClick={() => startCamera('id')}>
-                  <Camera size={16} color="#FFFFFF" /> Snap ID Card
-                </button>
-                <label className={styles.photoUploadLabel}>
-                  <ImageIcon size={16} color="var(--donor-primary-bright)" /> Choose File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileSelect(e, 'id')}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Section 3: Patient Data */}
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>3. Patient Medical Data</h2>
+              <h2 className={styles.sectionTitle}>1. Sign-in Account</h2>
 
               <div className={styles.field}>
                 <label className={styles.label}>Full Name *</label>
@@ -317,6 +338,85 @@ export default function PatientRegisterScreen() {
                   required
                 />
               </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Phone Number</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+20 10 0000 0000"
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Email *</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className={styles.input}
+                  required
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Password *</label>
+                <div className={styles.passwordWrap}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    className={styles.passwordInput}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className={styles.eyeBtn}
+                    onClick={() => setShowPassword((current) => !current)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} color="#7A8499" /> : <Eye size={18} color="#7A8499" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Face Photo */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>2. Face Photo</h2>
+              <div className={styles.photoBox}>
+                {faceImage ? (
+                  <img src={faceImage} alt="Patient Face" className={styles.previewImage} />
+                ) : (
+                  <div className={styles.photoPlaceholder}>
+                    <Camera size={36} color="#A0AABB" />
+                    <span className={styles.photoText}>Take Selfie or Upload Face</span>
+                  </div>
+                )}
+              </div>
+              <div className={styles.photoBtns}>
+                <button type="button" className={styles.photoActionBtn} onClick={startCamera}>
+                  <Camera size={16} color="#FFFFFF" /> Snap Selfie
+                </button>
+                <label className={styles.photoUploadLabel}>
+                  <ImageIcon size={16} color="var(--donor-primary-bright)" /> Choose File
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Section 3: Patient Data */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>3. Patient Medical Data</h2>
 
               <div className={styles.field}>
                 <label className={styles.label}>National ID Number (14 Digits)</label>
@@ -368,14 +468,120 @@ export default function PatientRegisterScreen() {
               </div>
             </div>
 
+            {/* Section 4: Donor Status */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>4. Donation Safety Check</h2>
+              <div className={`${styles.eligibilityPanel} ${canActivateDonor ? styles.eligibilityOk : styles.eligibilityBlocked}`}>
+                <ShieldCheck size={20} color={canActivateDonor ? '#116339' : '#A44700'} />
+                <div>
+                  <strong>{canActivateDonor ? 'Eligible to receive donor alerts' : 'Donor alerts paused until eligible'}</strong>
+                  <span>{eligibility.reasons[0]}</span>
+                </div>
+              </div>
+
+              <div className={styles.row}>
+                <div className={styles.fieldHalf}>
+                  <label className={styles.label}>Weight (kg) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={eligibilityAnswers.weightKg}
+                    onChange={(e) => updateEligibility('weightKg', e.target.value)}
+                    placeholder="70"
+                    className={styles.input}
+                  />
+                </div>
+
+                <div className={styles.fieldHalf}>
+                  <label className={styles.label}>Last donation</label>
+                  <input
+                    type="date"
+                    value={eligibilityAnswers.lastDonationDate}
+                    onChange={(e) => updateEligibility('lastDonationDate', e.target.value)}
+                    className={styles.input}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.checkGrid}>
+                <label className={styles.checkRow}>
+                  <input
+                    type="checkbox"
+                    checked={eligibilityAnswers.feelingWell}
+                    onChange={(e) => updateEligibility('feelingWell', e.target.checked)}
+                  />
+                  <span>I feel well today</span>
+                </label>
+                <label className={styles.checkRow}>
+                  <input
+                    type="checkbox"
+                    checked={eligibilityAnswers.takingAntibiotics}
+                    onChange={(e) => updateEligibility('takingAntibiotics', e.target.checked)}
+                  />
+                  <span>Taking antibiotics or have infection</span>
+                </label>
+                <label className={styles.checkRow}>
+                  <input
+                    type="checkbox"
+                    checked={eligibilityAnswers.recentTattooOrPiercing}
+                    onChange={(e) => updateEligibility('recentTattooOrPiercing', e.target.checked)}
+                  />
+                  <span>Recent tattoo or piercing</span>
+                </label>
+                <label className={styles.checkRow}>
+                  <input
+                    type="checkbox"
+                    checked={eligibilityAnswers.pregnantOrBreastfeeding}
+                    onChange={(e) => updateEligibility('pregnantOrBreastfeeding', e.target.checked)}
+                  />
+                  <span>Pregnant or breastfeeding</span>
+                </label>
+                <label className={styles.checkRow}>
+                  <input
+                    type="checkbox"
+                    checked={eligibilityAnswers.highRiskExposure}
+                    onChange={(e) => updateEligibility('highRiskExposure', e.target.checked)}
+                  />
+                  <span>Recent high-risk exposure</span>
+                </label>
+                <label className={styles.checkRow}>
+                  <input
+                    type="checkbox"
+                    checked={eligibilityAnswers.seriousMedicalCondition}
+                    onChange={(e) => updateEligibility('seriousMedicalCondition', e.target.checked)}
+                  />
+                  <span>Serious chronic medical condition</span>
+                </label>
+              </div>
+
+              <div className={styles.toggleRow}>
+                <div>
+                  <strong>Receive donor alerts</strong>
+                  <span>{canActivateDonor ? (isActiveDonor ? 'You can receive nearby compatible requests.' : 'Your donor profile is saved, but alerts are paused.') : 'Complete the safety check first.'}</span>
+                </div>
+                <button
+                  type="button"
+                  className={`${styles.toggle} ${isActiveDonor ? styles.toggleOn : ''}`}
+                  onClick={() => setIsActiveDonor((current) => (canActivateDonor ? !current : false))}
+                  aria-pressed={isActiveDonor}
+                  disabled={!canActivateDonor}
+                >
+                  <span />
+                </button>
+              </div>
+            </div>
+
             <button type="submit" className={styles.submitBtn} disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 size={20} color="#FFFFFF" className="animate-spin" />
-                  <span>Registering Patient...</span>
+                  <span>Creating Account...</span>
                 </>
               ) : (
-                'Save & Register Patient'
+                <>
+                  <Save size={18} color="#FFFFFF" />
+                  <span>Create Patient + Donor Account</span>
+                </>
               )}
             </button>
           </form>
@@ -387,7 +593,7 @@ export default function PatientRegisterScreen() {
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
             <h3 className={styles.modalTitle}>
-              Snap {activeCamMode === 'face' ? 'Face Photo' : 'National ID Photo'}
+              Snap Face Photo
             </h3>
             <div className={styles.videoWrap}>
               <video ref={videoRef} autoPlay playsInline className={styles.video} />

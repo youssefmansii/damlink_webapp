@@ -20,6 +20,8 @@ const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
   'AB+': ['AB+'],
 };
 
+const HIDDEN_DONOR_DISPATCH_STATUSES = new Set(['completed', 'declined', 'no_show']);
+
 export default function DonorDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -80,10 +82,25 @@ export default function DonorDashboard() {
     let finalRequests: any[] = [];
 
     if (!reqErr && reqData && reqData.length > 0) {
-      finalRequests = reqData.map((request) => {
+      const requestIds = reqData.map((request) => request.id);
+      const { data: donorDispatches } = await supabase
+        .from('donor_dispatches')
+        .select('request_id, status')
+        .eq('donor_user_id', user.id)
+        .in('request_id', requestIds);
+
+      const dispatchStatusByRequest = new globalThis.Map(
+        (donorDispatches ?? []).map((dispatch) => [dispatch.request_id, dispatch.status])
+      );
+
+      finalRequests = reqData.filter((request) => {
+        const donorStatus = dispatchStatusByRequest.get(request.id);
+        return !donorStatus || !HIDDEN_DONOR_DISPATCH_STATUSES.has(donorStatus);
+      }).map((request) => {
         const hospitalPoint = parseGeoPoint(request.hospitals?.location);
         return {
           ...request,
+          donorDispatchStatus: dispatchStatusByRequest.get(request.id) ?? null,
           hospitalPoint,
           distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
         };

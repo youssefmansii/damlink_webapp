@@ -169,6 +169,28 @@
   cursor: not-allowed;
 }
 
+.bystanderButton {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 12px;
+  border-radius: 14px;
+  color: #DD1F2A;
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.bystanderButton:hover {
+  background: #FFE4E6;
+  border-color: #FDA4AF;
+}
+
 .secondaryButton {
   text-align: center;
   margin-top: 16px;

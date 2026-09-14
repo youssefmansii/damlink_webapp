@@ -10,14 +10,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
+  const [hasSession, setHasSession] = useState(false);
+
+  const isPublicBystanderRoute = pathname.startsWith('/bystander');
 
   useEffect(() => {
     checkSession();
-  }, []);
+  }, [pathname]);
 
   const checkSession = async () => {
+    setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    setHasSession(Boolean(session));
+
+    if (!session && !isPublicBystanderRoute) {
       router.replace('/');
     } else {
       setLoading(false);
@@ -35,7 +41,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ paddingBottom: '84px', minHeight: '100vh' }}>
       {children}
-      <BottomNav />
+      {hasSession && <BottomNav />}
     </div>
   );
 }

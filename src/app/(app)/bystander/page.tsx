@@ -44,16 +44,30 @@ const SCAN_OPTIONS: ScanOption[] = [
 
 export default function BystanderHomeScreen() {
   const router = useRouter();
-  const [userName, setUserName] = useState('youssef');
+  const [userName, setUserName] = useState('guest');
+  const [isGuest, setIsGuest] = useState(true);
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
   const fetchProfile = async () => {
+    const forceGuest = localStorage.getItem('damlink_mode') === 'bystander_guest';
+    if (forceGuest) {
+      setUserName('guest');
+      setIsGuest(true);
+      return;
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: p } = await supabase.from('patients').select('full_name').eq('id', user.id).single();
+    if (!user) {
+      setUserName('guest');
+      setIsGuest(true);
+      return;
+    }
+
+    setIsGuest(false);
+    const { data: p } = await supabase.from('patients').select('full_name').eq('profile_id', user.id).maybeSingle();
     if (p?.full_name) {
       setUserName(p.full_name.split(' ')[0].toLowerCase());
     } else if (user.email) {
@@ -65,6 +79,10 @@ export default function BystanderHomeScreen() {
     router.push(`/bystander/scan?mode=${mode}`);
   };
 
+  const handleSwitchMode = () => {
+    router.push(isGuest ? '/' : '/donor');
+  };
+
   return (
     <div className={styles.screen}>
       {/* Header gradient */}
@@ -74,9 +92,9 @@ export default function BystanderHomeScreen() {
             <h1 className={styles.headerTitle}>🚨 Bystander Mode</h1>
             <p className={styles.headerSub}>Hello, {userName}</p>
           </div>
-          <button className={styles.switchModeBtn} onClick={() => router.push('/donor')}>
+          <button className={styles.switchModeBtn} onClick={handleSwitchMode}>
             <ArrowRightLeft size={16} color="#FFFFFF" />
-            Donor
+            {isGuest ? 'Sign in' : 'Donor'}
           </button>
         </div>
 

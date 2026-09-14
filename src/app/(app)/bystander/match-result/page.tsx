@@ -56,13 +56,7 @@ export default function MatchResultScreen() {
   };
 
   const getPhotoSrc = (url?: string | null) => {
-    if (!url) {
-      if (typeof window !== 'undefined') {
-        const scanImg = sessionStorage.getItem('damlink_scan_image');
-        if (scanImg) return scanImg;
-      }
-      return null;
-    }
+    if (!url) return null;
     if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }

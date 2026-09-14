@@ -1,260 +1,463 @@
 .screen {
-  flex: 1;
-  background-color: var(--donor-bg);
   min-height: 100vh;
-  padding-bottom: 90px;
+  padding-bottom: 96px;
+  background: var(--donor-bg);
 }
 
-.content {
-  padding: 16px;
-  padding-bottom: 32px;
-}
-
-.title {
-  color: var(--donor-text);
-  font-weight: 700;
-  font-size: 24px;
-}
-
-.subtitle {
-  margin-top: 4px;
-  color: var(--donor-muted);
-  margin-bottom: 18px;
-  font-size: 14px;
-}
-
-/* ── Avatar Card ── */
-.avatarCard {
-  background-color: #FFFFFF;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--donor-border);
-  padding: 16px;
+.screenCenter {
+  min-height: 100vh;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  margin-bottom: 14px;
+  justify-content: center;
+  background: var(--donor-bg);
+}
+
+.headerBand {
+  display: flex;
+  align-items: center;
   gap: 14px;
-}
-
-.avatarWrap {
-  flex-shrink: 0;
-}
-
-.avatarImg {
-  width: 64px;
-  height: 64px;
-  border-radius: 32px;
-  object-fit: cover;
-  border: 3px solid var(--donor-primary-bright);
+  padding: 24px 18px 42px;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #1A2E88 0%, #2E5BFF 100%);
 }
 
 .avatarInitials {
-  width: 64px;
-  height: 64px;
-  border-radius: 32px;
-  background-color: var(--donor-primary-bright);
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 18px;
   color: #FFFFFF;
+  font-size: 18px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.16);
+  border: 2px solid rgba(255, 255, 255, 0.32);
 }
 
-.avatarInfo {
-  flex: 1;
+.headerCopy {
   min-width: 0;
 }
 
-.name {
-  font-weight: 700;
-  font-size: 16px;
-  color: var(--donor-text);
+.title {
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 800;
 }
 
-.phone {
-  margin-top: 2px;
-  color: var(--donor-muted);
-  font-size: 13px;
+.subtitle {
+  margin-top: 5px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.82);
+  overflow-wrap: anywhere;
 }
 
-.email {
-  margin-top: 1px;
-  color: var(--donor-muted);
-  font-size: 12px;
-}
-
-.bloodBadge {
-  background-color: var(--donor-danger);
-  border-radius: 14px;
-  padding: 6px 12px;
-  flex-shrink: 0;
-}
-
-.bloodText {
-  color: #FFFFFF;
-  font-weight: 700;
-  font-size: 16px;
-}
-
-/* ── Stats Row ── */
-.statsRow {
-  background-color: #FFFFFF;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--donor-border);
-  padding: 16px;
-  display: flex;
-  flex-direction: row;
-  margin-bottom: 14px;
-}
-
-.statBlock {
-  flex: 1;
+.content {
+  margin-top: -22px;
+  padding: 0 16px 28px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 14px;
 }
 
-.statValue {
-  color: var(--donor-primary-bright);
-  font-weight: 700;
-  font-size: 20px;
-}
-
-.statLabel {
-  color: var(--donor-muted);
-  font-size: 11px;
-  margin-top: 2px;
-}
-
-.statDivider {
-  width: 1px;
-  background-color: var(--donor-border);
-}
-
-/* ── Card ── */
-.card {
-  background-color: #FFFFFF;
-  border-radius: var(--radius-md);
+.section,
+.statsStrip {
+  background: #FFFFFF;
   border: 1px solid var(--donor-border);
-  padding: 14px;
-  margin-bottom: 14px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 24px rgba(26, 46, 136, 0.08);
 }
 
-.cardTitle {
-  color: var(--donor-text);
-  font-weight: 700;
-  margin-bottom: 12px;
-  font-size: 15px;
-}
-
-.row {
+.section {
+  padding: 16px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.rowTextWrap {
-  flex: 1;
+.sectionHeading {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--donor-primary-bright);
 }
 
-.rowTitle {
+.sectionHeading h2 {
   color: var(--donor-text);
-  font-weight: 600;
-  font-size: 15px;
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 800;
 }
 
-.rowSub {
+.sectionHeading p {
   margin-top: 4px;
   color: var(--donor-muted);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
-/* ── Toggle ── */
-.toggle {
-  width: 44px;
-  height: 24px;
-  border-radius: 12px;
-  background-color: #C8D2E6;
-  position: relative;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  flex-shrink: 0;
+.noticeBox,
+.errorBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 700;
 }
 
-.toggleOn {
-  background-color: var(--donor-success);
+.noticeBox {
+  color: #116339;
+  background: #EAF8F0;
+  border: 1px solid #BCE8CD;
 }
 
-.toggleThumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  border-radius: 10px;
-  background-color: #FFFFFF;
-  transition: transform 0.3s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+.errorBox {
+  color: var(--donor-danger);
+  background: #FFF0F0;
+  border: 1px solid #FFC9C9;
 }
 
-.toggleOn .toggleThumb {
-  transform: translateX(20px);
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
-/* ── Nav Cards ── */
-.navCard {
-  background-color: #FFFFFF;
-  border-radius: var(--radius-md);
+.field label {
+  color: var(--donor-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  color: var(--donor-text);
+  background: #F8FAFF;
   border: 1px solid var(--donor-border);
-  padding: 14px;
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.15s;
+  border-radius: 12px;
+  outline: none;
+  font-size: 15px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.navCard:hover {
-  background-color: #FAFBFF;
+.input {
+  min-height: 46px;
+  padding: 11px 12px;
 }
 
-.navLeft {
-  display: flex;
-  align-items: center;
+.textarea {
+  min-height: 92px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.input:focus,
+.textarea:focus {
+  background: #FFFFFF;
+  border-color: var(--donor-primary-bright);
+  box-shadow: 0 0 0 3px rgba(46, 91, 255, 0.12);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.navText {
-  color: var(--donor-text);
-  font-weight: 600;
-  font-size: 15px;
+.bloodGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
 }
 
-/* ── Sign Out ── */
-.signOutButton {
-  margin-top: 16px;
+.bloodPill {
+  min-height: 40px;
+  border-radius: 12px;
+  color: var(--donor-muted);
+  background: #F8FAFF;
+  border: 1px solid var(--donor-border);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bloodPillActive {
+  color: #FFFFFF;
+  background: var(--donor-danger);
+  border-color: var(--donor-danger);
+  box-shadow: 0 6px 14px rgba(221, 31, 42, 0.18);
+}
+
+.toggleRow {
+  min-height: 56px;
+  padding: 12px;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 14px;
+  background: #F8FAFF;
+  border: 1px solid var(--donor-border);
+}
+
+.toggleRow div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.toggleRow strong {
+  color: var(--donor-text);
+  font-size: 14px;
+}
+
+.toggleRow span {
+  color: var(--donor-muted);
+  font-size: 12px;
+}
+
+.toggle {
+  width: 48px;
+  height: 28px;
+  flex: 0 0 48px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #CBD5E1;
+  transition: background 0.18s ease;
+}
+
+.toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.toggle span {
+  width: 22px;
+  height: 22px;
+  display: block;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(18, 24, 38, 0.18);
+  transition: transform 0.18s ease;
+}
+
+.toggleOn {
+  background: var(--donor-success);
+}
+
+.toggleOn span {
+  transform: translateX(20px);
+}
+
+.eligibilityPanel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid;
+}
+
+.eligibilityPanel div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eligibilityPanel strong {
+  color: var(--donor-text);
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.eligibilityPanel span {
+  color: var(--donor-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.eligibilityOk {
+  color: #116339;
+  background: #EAF8F0;
+  border-color: #BCE8CD;
+}
+
+.eligibilityBlocked {
+  color: #A44700;
+  background: #FFF7ED;
+  border-color: #FED7AA;
+}
+
+.checkGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.checkRow {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: var(--donor-text);
+  background: #F8FAFF;
+  border: 1px solid var(--donor-border);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.checkRow input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  accent-color: var(--donor-primary-bright);
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.statusButton,
+.signOutButton {
+  min-height: 46px;
+  border-radius: 12px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background-color: #FFF0F0;
-  border-radius: var(--radius-md);
-  border: 1px solid #FFCDD2;
-  padding: 14px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.primaryButton {
   width: 100%;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  color: #FFFFFF;
+  background: var(--donor-primary-bright);
+  box-shadow: 0 7px 16px rgba(46, 91, 255, 0.2);
 }
 
-.signOutButton:hover {
-  background-color: #FFE4E4;
+.secondaryButton {
+  width: 100%;
+  color: var(--donor-primary-bright);
+  background: #EEF3FF;
+  border: 1px solid #CAD8FF;
 }
 
-.signOutText {
-  color: #DD1F2A;
-  font-weight: 700;
-  font-size: 15px;
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.signOutButton:disabled {
+  opacity: 0.64;
+  cursor: not-allowed;
+}
+
+.contactEditor {
+  display: grid;
+  gap: 10px;
+}
+
+.contactList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contactItem {
+  padding: 12px;
+  border-radius: 14px;
+  background: #F8FAFF;
+  border: 1px solid var(--donor-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contactActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.statusButton {
+  color: #7A8499;
+  background: #FFFFFF;
+  border: 1px solid var(--donor-border);
+}
+
+.statusButtonOn {
+  color: #116339;
+  background: #EAF8F0;
+  border-color: #BCE8CD;
+}
+
+.dangerButton {
+  color: var(--donor-danger);
+  background: #FFF0F0;
+  border: 1px solid #FFC9C9;
+}
+
+.emptyState {
+  padding: 18px;
+  text-align: center;
+  color: var(--donor-muted);
+  font-size: 14px;
+  border-radius: 14px;
+  background: #F8FAFF;
+  border: 1px dashed #CBD5E1;
+}
+
+.statsStrip {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.statsStrip div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.statsStrip strong {
+  color: var(--donor-primary-bright);
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.statsStrip span {
+  color: var(--donor-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.signOutButton {
+  width: 100%;
+  color: var(--donor-danger);
+  background: #FFF0F0;
+  border: 1px solid #FFC9C9;
+}
+
+@media (max-width: 420px) {
+  .content {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .formRow,
+  .contactActions {
+    grid-template-columns: 1fr;
+  }
+
+  .bloodGrid {
+    grid-template-columns: repeat(4, minmax(44px, 1fr));
+  }
 }

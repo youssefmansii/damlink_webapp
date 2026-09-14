@@ -97,11 +97,6 @@ function ScanningContent() {
         return;
       }
 
-      // Attach snapped image if photo_url is empty
-      if (imageUri && (!patientObj.photo_url || patientObj.photo_url.startsWith('patient-faces'))) {
-        patientObj.photo_url = imageUri;
-      }
-
       sessionStorage.setItem(
         'damlink_match_data',
         JSON.stringify({
@@ -109,6 +104,8 @@ function ScanningContent() {
           patient: patientObj,
           request_id: data?.request_id || `req_${Date.now()}`,
           hospital: data?.hospital ?? null,
+          scan_mode: mode,
+          scanned_image: imageUri || null,
         })
       );
 

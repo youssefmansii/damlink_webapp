@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Droplet, Eye, EyeOff, AlertCircle, UserPlus } from 'lucide-react';
+import { AlertCircle, Droplet, Eye, EyeOff, ScanFace, UserPlus } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -41,6 +41,22 @@ export default function Home() {
     }
   };
 
+  const handleContinueAsBystander = async () => {
+    setError(null);
+
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('[Bystander guest mode] Sign out notice:', err);
+    }
+
+    localStorage.setItem('damlink_mode', 'bystander_guest');
+    sessionStorage.removeItem('damlink_match_data');
+    sessionStorage.removeItem('damlink_scan_image');
+    sessionStorage.removeItem('damlink_scan_mode');
+    router.push('/bystander');
+  };
+
   return (
     <div className={styles.screen}>
       {/* Header Gradient */}
@@ -55,7 +71,7 @@ export default function Home() {
       {/* Form Card */}
       <div className={styles.formCard}>
         <h2 className={styles.title}>Welcome Back</h2>
-        <p className={styles.subtitle}>Sign in to your donor account</p>
+        <p className={styles.subtitle}>Sign in to your DamLink account</p>
 
         {error && (
           <div className={styles.errorBox}>
@@ -103,17 +119,24 @@ export default function Home() {
           </button>
         </form>
 
-        {/* Account Registration Links Row */}
+        <button
+          type="button"
+          className={styles.bystanderButton}
+          onClick={handleContinueAsBystander}
+        >
+          <ScanFace size={18} color="#DD1F2A" />
+          Continue as Bystander
+        </button>
+
+        {/* Account Registration */}
         <div className={styles.secondaryButton}>
-          <span>Don't have an account? <a href="/auth/register" className={styles.linkText}>Register</a></span>
-          <span className={styles.dotDivider}>•</span>
           <button
             type="button"
             className={styles.patientRegisterLink}
             onClick={() => router.push('/patient/register')}
           >
             <UserPlus size={14} color="var(--donor-primary-bright)" />
-            Register Patient
+            Create Account
           </button>
         </div>
       </div>

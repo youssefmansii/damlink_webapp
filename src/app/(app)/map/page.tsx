@@ -19,6 +19,8 @@ const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
   'AB+': ['AB+'],
 };
 
+const HIDDEN_DONOR_DISPATCH_STATUSES = new Set(['completed', 'declined', 'no_show']);
+
 export default function MapScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -48,8 +50,10 @@ export default function MapScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       let userBloodType = 'A-';
       let currentLocation: GeoPoint | null = null;
+      let userId: string | null = null;
 
       if (user) {
+        userId = user.id;
         const { data: p } = await supabase.from('profiles').select('blood_type').eq('id', user.id).maybeSingle();
         if (p?.blood_type) userBloodType = p.blood_type;
 
@@ -77,10 +81,29 @@ export default function MapScreen() {
       let finalRequests: any[] = [];
 
       if (!error && data && data.length > 0) {
-        finalRequests = data.map((request) => {
+        let dispatchStatusByRequest = new Map<string, string>();
+
+        if (userId) {
+          const requestIds = data.map((request) => request.id);
+          const { data: donorDispatches } = await supabase
+            .from('donor_dispatches')
+            .select('request_id, status')
+            .eq('donor_user_id', userId)
+            .in('request_id', requestIds);
+
+          dispatchStatusByRequest = new Map(
+            (donorDispatches ?? []).map((dispatch) => [dispatch.request_id, dispatch.status])
+          );
+        }
+
+        finalRequests = data.filter((request) => {
+          const donorStatus = dispatchStatusByRequest.get(request.id);
+          return !donorStatus || !HIDDEN_DONOR_DISPATCH_STATUSES.has(donorStatus);
+        }).map((request) => {
           const hospitalPoint = parseGeoPoint(request.hospitals?.location);
           return {
             ...request,
+            donorDispatchStatus: dispatchStatusByRequest.get(request.id) ?? null,
             hospitalPoint,
             distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
           };
