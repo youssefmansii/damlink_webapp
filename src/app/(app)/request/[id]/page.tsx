@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, CheckCircle2, XCircle, Phone, MapPin, Navigation, Droplet, Clock, Loader2, Heart } from 'lucide-react';
+import { formatDistance, getBrowserLocation, haversineKm, parseGeoPoint, type GeoPoint } from '@/lib/geo';
 import styles from './request-detail.module.css';
 
 interface RequestDetail {
@@ -20,6 +21,7 @@ interface RequestDetail {
     name: string;
     address: string | null;
     phone: string | null;
+    location?: unknown;
   } | null;
 }
 
@@ -39,6 +41,7 @@ export default function RequestDetailScreen() {
   const [actionLoading, setActionLoading] = useState(false);
   const [responded, setResponded] = useState(false);
   const [responseStatus, setResponseStatus] = useState<'accepted' | 'declined' | 'completed' | null>(null);
+  const [donorLocation, setDonorLocation] = useState<GeoPoint | null>(null);
 
   useEffect(() => {
     if (requestId) {
@@ -61,7 +64,7 @@ export default function RequestDetailScreen() {
         created_at,
         expires_at,
         hospital:hospitals (
-          id, name, address, phone
+          id, name, address, phone, location
         )
       `)
       .eq('id', requestId)
@@ -69,31 +72,24 @@ export default function RequestDetailScreen() {
 
     if (!error && data) {
       setRequest(data as unknown as RequestDetail);
-    } else {
-      // Fallback demo request details matching standardized emergency requests
-      setRequest({
-        id: requestId,
-        blood_type_needed: 'A-',
-        units_needed: 2,
-        urgency: 'critical',
-        status: 'donor_matching',
-        accident_notes: 'RTA victim, head injury, blood urgently needed for surgery.',
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 12 * 3600000).toISOString(),
-        hospital: {
-          id: '11111111-0000-0000-0000-000000000002',
-          name: 'Nasser Institute Hospital',
-          address: 'Corniche El Nile, Shubra, Cairo',
-          phone: '+20-2-25731285',
-        },
-      });
     }
     setLoading(false);
   };
 
   const checkPriorResponse = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setDonorLocation(await getBrowserLocation());
+      return;
+    }
+
+    const { data: donor } = await supabase
+      .from('donor_profiles')
+      .select('location')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    setDonorLocation(parseGeoPoint(donor?.location) ?? await getBrowserLocation());
 
     const { data } = await supabase
       .from('donor_dispatches')
@@ -200,6 +196,12 @@ export default function RequestDetailScreen() {
   };
 
   const openDirections = () => {
+    const hospitalPoint = parseGeoPoint(request?.hospital?.location);
+    if (hospitalPoint) {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${hospitalPoint.lat},${hospitalPoint.lng}`, '_blank');
+      return;
+    }
+
     if (!request?.hospital?.address) return;
     const encoded = encodeURIComponent(request.hospital.address);
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encoded}`, '_blank');
@@ -214,7 +216,9 @@ export default function RequestDetailScreen() {
   }
 
   const urgencyColor = URGENCY_COLOR[request?.urgency || 'urgent'] ?? '#E07B00';
-  const hospitalName = request?.hospital?.name || 'Nasser Institute Hospital';
+  const hospitalName = request?.hospital?.name || 'Hospital';
+  const hospitalPoint = parseGeoPoint(request?.hospital?.location);
+  const distanceKm = donorLocation && hospitalPoint ? haversineKm(donorLocation, hospitalPoint) : null;
 
   return (
     <div className={styles.screen}>
@@ -287,6 +291,10 @@ export default function RequestDetailScreen() {
           <div className={styles.detailRow}>
             <span className={styles.label}>Time Window</span>
             <span className={styles.value}>Expires in 12 hours</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.label}>Distance to Hospital</span>
+            <span className={styles.value}>{formatDistance(distanceKm)}</span>
           </div>
 
           {request?.accident_notes && (

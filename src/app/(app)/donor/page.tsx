@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Droplet, Calendar, CheckCircle2, Map, ChevronRight, MapPin, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import LiveRequestMap from '@/components/LiveRequestMap';
+import { formatDistance, getBrowserLocation, haversineKm, parseGeoPoint, type GeoPoint } from '@/lib/geo';
 import styles from './donor.module.css';
 
 // Blood compatibility matrix (Key = Donor Blood Type -> Value = Recipient Blood Types donor CAN give to)
@@ -18,37 +20,6 @@ const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
   'AB+': ['AB+'],
 };
 
-// Standardized Synchronized Emergency Requests
-const DEMO_ACTIVE_REQUESTS = [
-  {
-    id: 'req-nasser-1',
-    blood_type_needed: 'A-',
-    units_needed: 1,
-    urgency: 'urgent',
-    status: 'donor_matching',
-    created_at: new Date().toISOString(),
-    hospitals: { name: 'Nasser Institute Hospital', address: 'Corniche El Nile, Shubra, Cairo' },
-  },
-  {
-    id: 'req-maadi-1',
-    blood_type_needed: 'A-',
-    units_needed: 3,
-    urgency: 'critical',
-    status: 'donor_matching',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    hospitals: { name: 'Al-Maadi Military Hospital', address: 'Road 9, Maadi, Cairo' },
-  },
-  {
-    id: 'req-kasr-1',
-    blood_type_needed: 'A-',
-    units_needed: 2,
-    urgency: 'urgent',
-    status: 'pending',
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    hospitals: { name: 'Kasr Al Ainy Hospital', address: 'El Manial, Cairo' },
-  },
-];
-
 export default function DonorDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -56,6 +27,7 @@ export default function DonorDashboard() {
   const [donorProfile, setDonorProfile] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [isActive, setIsActive] = useState(true);
+  const [donorLocation, setDonorLocation] = useState<GeoPoint | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -86,10 +58,12 @@ export default function DonorDashboard() {
 
     const userProfile = p || { full_name: user.email?.split('@')[0] || 'youssef mansi', blood_type: 'A-' };
     const userDonor = d || { donations_count: 5, lives_saved_estimate: 15, is_active: true };
+    const currentLocation = parseGeoPoint(userDonor?.location) ?? await getBrowserLocation();
 
     setProfile(userProfile);
     setDonorProfile(userDonor);
     setIsActive(userDonor?.is_active ?? true);
+    setDonorLocation(currentLocation);
 
     // 2. Fetch active & compatible emergency requests
     const donorBloodType = userProfile.blood_type || 'A-';
@@ -97,7 +71,7 @@ export default function DonorDashboard() {
 
     let query = supabase
       .from('emergency_requests')
-      .select('*, hospitals(name, address)')
+      .select('*, hospitals(name, address, phone, location)')
       .in('status', ['pending', 'hospital_notified', 'donor_matching'])
       .in('blood_type_needed', compatibleTypes);
 
@@ -106,19 +80,24 @@ export default function DonorDashboard() {
     let finalRequests: any[] = [];
 
     if (!reqErr && reqData && reqData.length > 0) {
-      finalRequests = [...reqData];
-    } else {
-      finalRequests = DEMO_ACTIVE_REQUESTS.map((r) => ({
-        ...r,
-        blood_type_needed: donorBloodType,
-      }));
+      finalRequests = reqData.map((request) => {
+        const hospitalPoint = parseGeoPoint(request.hospitals?.location);
+        return {
+          ...request,
+          hospitalPoint,
+          distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
+        };
+      });
     }
 
-    // Sort exact blood type match (A-) FIRST
+    // Sort exact blood type match first, then nearest real hospital.
     finalRequests.sort((a, b) => {
       const aExact = a.blood_type_needed === donorBloodType ? 0 : 1;
       const bExact = b.blood_type_needed === donorBloodType ? 0 : 1;
       if (aExact !== bExact) return aExact - bExact;
+      const aDistance = a.distanceKm ?? Number.POSITIVE_INFINITY;
+      const bDistance = b.distanceKm ?? Number.POSITIVE_INFINITY;
+      if (aDistance !== bDistance) return aDistance - bDistance;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
@@ -233,9 +212,17 @@ export default function DonorDashboard() {
         <>
           {/* Map Preview Card */}
           <div className={styles.mapCard} onClick={() => router.push('/map')}>
-            <div className={styles.mapBackground}>
-              <Map size={48} color="rgba(26,46,136,0.1)" />
-            </div>
+            <LiveRequestMap
+              compact
+              userLocation={donorLocation}
+              requests={requests.map((request) => ({
+                id: request.id,
+                urgency: request.urgency,
+                hospitalName: request.hospitals?.name ?? 'Hospital',
+                hospitalPoint: request.hospitalPoint ?? null,
+                distanceKm: request.distanceKm ?? null,
+              }))}
+            />
             <div className={styles.mapOverlay}>
               <Map size={14} color="#FFFFFF" />
               <span className={styles.mapOverlayText}>Tap to view all {requests.length} requests on map</span>
@@ -246,7 +233,7 @@ export default function DonorDashboard() {
           <h2 className={styles.sectionTitle}>Urgent Requests</h2>
           <div className={styles.requestsCard}>
             {homeRequests.map((r, i) => {
-              const hospitalName = r.hospitals?.name || 'Nasser Institute Hospital';
+              const hospitalName = r.hospitals?.name || 'Hospital';
               return (
                 <div key={r.id || i} style={{ cursor: 'pointer' }} onClick={() => router.push(`/request/${r.id}`)}>
                   <div className={styles.requestRow}>
@@ -264,7 +251,7 @@ export default function DonorDashboard() {
                     </div>
                     <div className={styles.distanceBlock}>
                       <MapPin size={12} color="#7A8499" />
-                      <span className={styles.distanceText}>2.4 km</span>
+                      <span className={styles.distanceText}>{formatDistance(r.distanceKm)}</span>
                     </div>
                   </div>
                   {i < homeRequests.length - 1 && <div className={styles.requestDivider} />}

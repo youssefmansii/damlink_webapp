@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MapPin, Navigation, Loader2, Hospital, Droplet, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import LiveRequestMap from '@/components/LiveRequestMap';
+import { formatDistance, getBrowserLocation, haversineKm, parseGeoPoint, type GeoPoint } from '@/lib/geo';
 import styles from './map.module.css';
 
 const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
@@ -17,43 +19,13 @@ const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
   'AB+': ['AB+'],
 };
 
-// Standardized Synchronized Emergency Requests
-const DEMO_ACTIVE_REQUESTS = [
-  {
-    id: 'req-nasser-1',
-    blood_type_needed: 'A-',
-    units_needed: 1,
-    urgency: 'urgent',
-    status: 'donor_matching',
-    created_at: new Date().toISOString(),
-    hospitals: { name: 'Nasser Institute Hospital', address: 'Corniche El Nile, Shubra, Cairo' },
-  },
-  {
-    id: 'req-maadi-1',
-    blood_type_needed: 'A-',
-    units_needed: 3,
-    urgency: 'critical',
-    status: 'donor_matching',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    hospitals: { name: 'Al-Maadi Military Hospital', address: 'Road 9, Maadi, Cairo' },
-  },
-  {
-    id: 'req-kasr-1',
-    blood_type_needed: 'A-',
-    units_needed: 2,
-    urgency: 'urgent',
-    status: 'pending',
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    hospitals: { name: 'Kasr Al Ainy Hospital', address: 'El Manial, Cairo' },
-  },
-];
-
 export default function MapScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [activeRequests, setActiveRequests] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [donorBloodType, setDonorBloodType] = useState('A-');
+  const [donorLocation, setDonorLocation] = useState<GeoPoint | null>(null);
 
   useEffect(() => {
     fetchActiveRequests();
@@ -75,38 +47,54 @@ export default function MapScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       let userBloodType = 'A-';
+      let currentLocation: GeoPoint | null = null;
 
       if (user) {
         const { data: p } = await supabase.from('profiles').select('blood_type').eq('id', user.id).maybeSingle();
         if (p?.blood_type) userBloodType = p.blood_type;
+
+        const { data: donor } = await supabase
+          .from('donor_profiles')
+          .select('location')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        currentLocation = parseGeoPoint(donor?.location);
       }
+
+      currentLocation = currentLocation ?? await getBrowserLocation();
       setDonorBloodType(userBloodType);
+      setDonorLocation(currentLocation);
 
       const compatibleTypes = DONOR_CAN_GIVE_TO[userBloodType] || ['A-', 'A+', 'AB-', 'AB+'];
 
       // Query active & compatible emergency requests
       const { data, error } = await supabase
         .from('emergency_requests')
-        .select('*, hospitals(name, address, phone)')
+        .select('*, hospitals(name, address, phone, location)')
         .in('status', ['pending', 'hospital_notified', 'donor_matching'])
         .in('blood_type_needed', compatibleTypes);
 
       let finalRequests: any[] = [];
 
       if (!error && data && data.length > 0) {
-        finalRequests = [...data];
-      } else {
-        finalRequests = DEMO_ACTIVE_REQUESTS.map((r) => ({
-          ...r,
-          blood_type_needed: userBloodType,
-        }));
+        finalRequests = data.map((request) => {
+          const hospitalPoint = parseGeoPoint(request.hospitals?.location);
+          return {
+            ...request,
+            hospitalPoint,
+            distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
+          };
+        });
       }
 
-      // Sort exact match (A-) to the TOP
+      // Sort exact match first, then nearest real hospital.
       finalRequests.sort((a, b) => {
         const aExact = a.blood_type_needed === userBloodType ? 0 : 1;
         const bExact = b.blood_type_needed === userBloodType ? 0 : 1;
         if (aExact !== bExact) return aExact - bExact;
+        const aDistance = a.distanceKm ?? Number.POSITIVE_INFINITY;
+        const bDistance = b.distanceKm ?? Number.POSITIVE_INFINITY;
+        if (aDistance !== bDistance) return aDistance - bDistance;
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
@@ -145,38 +133,22 @@ export default function MapScreen() {
         </div>
       ) : (
         <>
-          {/* Map Display */}
           <div className={styles.mapPlaceholder}>
-            <div className={styles.fakeMap}>
-              {/* Active Pins */}
-              {activeRequests.map((req, i) => {
-                const isSelected = selectedRequest?.id === req.id;
-                const topPos = i === 0 ? '30%' : i === 1 ? '45%' : '65%';
-                const leftPos = i === 0 ? '35%' : i === 1 ? '60%' : '42%';
-                const color = getUrgencyColor(req.urgency);
-
-                return (
-                  <div
-                    key={req.id}
-                    className={`${styles.pin} ${isSelected ? styles.selectedPin : ''}`}
-                    style={{ top: topPos, left: leftPos, backgroundColor: color }}
-                    onClick={() => setSelectedRequest(req)}
-                    title={req.hospitals?.name}
-                  >
-                    <MapPin size={18} color="#FFFFFF" />
-                  </div>
-                );
-              })}
-
-              {/* User Location Pin */}
-              <div className={`${styles.pin} ${styles.userPin}`} style={{ top: '48%', left: '46%' }}>
-                <Navigation size={14} color="#FFFFFF" />
-              </div>
-
-              <div className={styles.mapLabel}>
-                {activeRequests.length > 0 ? `● ${activeRequests.length} Active Nearby Requests` : 'No Active Dispatches'}
-              </div>
-            </div>
+            <LiveRequestMap
+              userLocation={donorLocation}
+              selectedRequestId={selectedRequest?.id}
+              onSelectRequest={(mapped) => {
+                const selected = activeRequests.find((request) => request.id === mapped.id);
+                if (selected) setSelectedRequest(selected);
+              }}
+              requests={activeRequests.map((request) => ({
+                id: request.id,
+                urgency: request.urgency,
+                hospitalName: request.hospitals?.name ?? 'Hospital',
+                hospitalPoint: request.hospitalPoint ?? null,
+                distanceKm: request.distanceKm ?? null,
+              }))}
+            />
           </div>
 
           {/* Legend */}
@@ -209,7 +181,7 @@ export default function MapScreen() {
             ) : (
               activeRequests.map((req) => {
                 const isSelected = selectedRequest?.id === req.id;
-                const hospitalName = req.hospitals?.name || 'Nasser Institute Hospital';
+                const hospitalName = req.hospitals?.name || 'Hospital';
                 const urgencyColor = getUrgencyColor(req.urgency);
 
                 return (
@@ -247,7 +219,7 @@ export default function MapScreen() {
                     {req.hospitals?.address && (
                       <div className={styles.addressLine}>
                         <MapPin size={14} color="var(--donor-muted)" />
-                        <span>{req.hospitals.address}</span>
+                        <span>{formatDistance(req.distanceKm)} • {req.hospitals.address}</span>
                       </div>
                     )}
                   </div>
