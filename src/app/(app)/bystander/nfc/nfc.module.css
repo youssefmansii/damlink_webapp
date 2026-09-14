@@ -1,0 +1,298 @@
+.screen {
+  min-height: 100vh;
+  padding-bottom: 86px;
+  background: #FFF5F5;
+}
+
+.header {
+  min-height: 132px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 18px 42px;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #8B0000 0%, #DD1F2A 100%);
+}
+
+.backButton {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header h1 {
+  margin: 4px 0 4px;
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.header p {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.content {
+  margin-top: -24px;
+  padding: 0 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.loadingCard,
+.errorCard,
+.patientCard,
+.hospitalCard,
+.notesCard {
+  background: #FFFFFF;
+  border: 1px solid #F5D0D0;
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(139, 0, 0, 0.08);
+}
+
+.loadingCard,
+.errorCard {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 22px;
+  text-align: center;
+  color: #DD1F2A;
+}
+
+.loadingCard span,
+.errorCard p {
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.errorCard h2 {
+  color: #121826;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.errorCard button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  color: #FFFFFF;
+  background: #DD1F2A;
+  font-weight: 800;
+}
+
+.inlineError {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  color: #DD1F2A;
+  background: #FFFFFF;
+  border: 1px solid #FFC9C9;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.patientCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+}
+
+.patientPhoto,
+.patientInitials {
+  width: 86px;
+  height: 86px;
+  flex: 0 0 86px;
+  border-radius: 50%;
+  border: 3px solid #F5D0D0;
+}
+
+.patientPhoto {
+  object-fit: cover;
+}
+
+.patientInitials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #DD1F2A;
+  background: #FFEDED;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.patientInfo {
+  min-width: 0;
+}
+
+.identityLabel {
+  color: #DD1F2A;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.patientInfo h2 {
+  margin: 5px 0 8px;
+  color: #121826;
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.patientMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #667085;
+  font-size: 13px;
+}
+
+.patientMeta strong {
+  min-width: 42px;
+  padding: 5px 10px;
+  color: #FFFFFF;
+  background: #DD1F2A;
+  border-radius: 999px;
+  text-align: center;
+}
+
+.hospitalCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+}
+
+.hospitalIcon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #E07B00;
+}
+
+.hospitalCard span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hospitalCard strong {
+  display: block;
+  margin-top: 3px;
+  color: #121826;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 900;
+}
+
+.hospitalCard p {
+  margin-top: 4px;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.notesCard {
+  padding: 14px;
+}
+
+.notesCard label {
+  display: block;
+  margin-bottom: 8px;
+  color: #121826;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.notesCard textarea {
+  width: 100%;
+  min-height: 108px;
+  padding: 12px;
+  color: #121826;
+  background: #FFF8F8;
+  border: 1px solid #F5D0D0;
+  border-radius: 12px;
+  outline: none;
+  resize: vertical;
+  font: inherit;
+}
+
+.notesCard textarea:focus {
+  border-color: #DD1F2A;
+  box-shadow: 0 0 0 3px rgba(221, 31, 42, 0.12);
+}
+
+.notifyButton,
+.callButton {
+  min-height: 54px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.notifyButton {
+  color: #FFFFFF;
+  background: #DD1F2A;
+  box-shadow: 0 10px 20px rgba(221, 31, 42, 0.22);
+}
+
+.notifyButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.callButton {
+  color: #DD1F2A;
+  background: #FFFFFF;
+  border: 1px solid #F5D0D0;
+}
+
+.privacyNote {
+  color: #667085;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 380px) {
+  .patientCard {
+    align-items: flex-start;
+  }
+
+  .patientPhoto,
+  .patientInitials {
+    width: 74px;
+    height: 74px;
+    flex-basis: 74px;
+  }
+
+  .patientInfo h2 {
+    font-size: 18px;
+  }
+}
