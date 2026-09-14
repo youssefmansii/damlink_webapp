@@ -102,20 +102,13 @@ function ScanningContent() {
         patientObj.photo_url = imageUri;
       }
 
-      const hospitalInfo = data?.hospital || {
-        id: '11111111-0000-0000-0000-000000000002',
-        name: 'Cairo University Hospital',
-        address: 'Al-Saray St, Al-Manyal, Cairo',
-        eta_minutes: 15,
-      };
-
       sessionStorage.setItem(
         'damlink_match_data',
         JSON.stringify({
           matched: true,
           patient: patientObj,
           request_id: data?.request_id || `req_${Date.now()}`,
-          hospital: hospitalInfo,
+          hospital: data?.hospital ?? null,
         })
       );
 

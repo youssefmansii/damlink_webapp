@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, CheckCircle2, Asterisk, Bell, Loader2, Building2, ExternalLink, Droplet } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Asterisk, Bell, Loader2 } from 'lucide-react';
 import styles from './match-result.module.css';
 
 export default function MatchResultScreen() {
@@ -53,15 +53,6 @@ export default function MatchResultScreen() {
     } finally {
       setNotifying(false);
     }
-  };
-
-  const openHospitalDashboard = () => {
-    const hospId = matchData?.hospital?.id || '11111111-0000-0000-0000-000000000002';
-    const email = 'hospital@damlink.com';
-    const targetHost = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
-      ? 'https://damlink-hospital.vercel.app'
-      : 'http://localhost:3000';
-    window.open(`${targetHost}/login?demo=true&email=${encodeURIComponent(email)}&hospital_id=${hospId}`, '_blank');
   };
 
   const getPhotoSrc = (url?: string | null) => {
@@ -186,22 +177,9 @@ export default function MatchResultScreen() {
         </p>
 
         {/* Report wrong match */}
-        <button className={styles.wrongMatchButton} onClick={() => router.push('/bystander')}>
+        <button className={styles.wrongMatchButton} onClick={() => router.push('/bystander/no-match?reason=wrong_match')}>
           Wrong person? Report incorrect match
         </button>
-
-        {/* Judge Demo Quick Actions Bar */}
-        <div className={styles.judgeBar}>
-          <span className={styles.judgeBarTitle}>⚖️ Judge Demo Quick Links:</span>
-          <div className={styles.judgeBtns}>
-            <button className={styles.judgeBtnHospital} onClick={openHospitalDashboard}>
-              <Building2 size={16} /> 🏥 Assigned Hospital Dashboard <ExternalLink size={12} />
-            </button>
-            <button className={styles.judgeBtnDonor} onClick={() => router.push('/donor')}>
-              <Droplet size={16} /> 🩸 View in Donor Dashboard
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ export default function NoMatchScreen() {
   const [manualNationalId, setManualNationalId] = useState('');
   const [manualIdError, setManualIdError] = useState('');
   const [manualIdSearching, setManualIdSearching] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const normalizeNationalId = (value: string) => {
     return value
@@ -91,44 +92,51 @@ export default function NoMatchScreen() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description.trim()) {
-      alert('Please provide at least a brief description of the victim.');
+      setFormError('Please provide at least a brief description of the victim.');
       return;
     }
 
     setSubmitting(true);
+    setFormError('');
 
     try {
-      const { data: userAuth } = await supabase.auth.getUser();
-      const currentUserId = userAuth?.user?.id || null;
+      const coords = await getCoordinates();
+      const descriptionText = `[UNIDENTIFIED VICTIM]\nDescription: ${description.trim()}${
+        notes.trim() ? `\nNotes: ${notes.trim()}` : ''
+      }`;
 
-      // Insert emergency request for unidentified victim
-      const { error: requestError } = await supabase
-        .from('emergency_requests')
-        .insert({
-          patient_id: null,
-          scanned_by_user_id: currentUserId,
-          blood_type_needed: estimatedBloodType === 'Unknown' ? 'O+' : estimatedBloodType,
-          units_needed: 2,
-          status: 'pending',
-          location: 'SRID=4326;POINT(31.2357 30.0444)',
-          accident_notes: `[UNIDENTIFIED VICTIM]\nDescription: ${description.trim()}\n${notes.trim() ? `Notes: ${notes.trim()}` : ''}`,
-          assigned_hospital_id: '11111111-0000-0000-0000-000000000002',
-          urgency: 'urgent',
-          expires_at: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+      const { data, error } = await supabase.functions.invoke('on-victim-scan', {
+        body: {
+          scan_mode: 'manual',
+          unidentified: true,
+          description: descriptionText,
+          estimated_blood_type: estimatedBloodType,
+          bystander_lat: coords.lat,
+          bystander_lng: coords.lng,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.request_id) throw new Error('The emergency request was not created.');
+
+      sessionStorage.removeItem('damlink_scan_image');
+      sessionStorage.setItem(
+        'damlink_unidentified_request',
+        JSON.stringify({
+          request_id: data.request_id,
+          hospital: data.hospital ?? null,
         })
-        .select('id')
-        .single();
+      );
 
-      if (requestError) {
-        console.error('[NoMatch] Request insert error:', requestError);
-      }
-
-      alert('Emergency alert sent to nearest hospital for Unidentified Victim.');
+      alert(
+        data.hospital?.name
+          ? `Emergency alert sent to ${data.hospital.name}.`
+          : 'Emergency alert sent. Hospital assignment is pending.'
+      );
       router.push('/bystander');
     } catch (err) {
-      console.error(err);
-      alert('Alert dispatched to emergency services.');
-      router.push('/bystander');
+      console.error('[NoMatch] Unidentified request error:', err);
+      setFormError('Could not send this emergency alert right now. Please call ambulance services and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -258,6 +266,12 @@ export default function NoMatchScreen() {
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
+
+          {formError && (
+            <p className={styles.formError} role="alert">
+              {formError}
+            </p>
+          )}
 
           <button type="submit" className={styles.submitBtn} disabled={submitting}>
             {submitting ? (

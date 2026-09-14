@@ -30,17 +30,7 @@ export default function Home() {
         password,
       });
 
-      if (signInError && signInError.message.includes('Invalid login credentials')) {
-        // Auto sign-up for demo accounts
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: { data: { full_name: 'Demo Donor', phone: '+201000000000' } }
-        });
-        if (signUpError) throw signUpError;
-      } else if (signInError) {
-        throw signInError;
-      }
+      if (signInError) throw signInError;
 
       // Default to donor mode on login
       localStorage.setItem('damlink_mode', 'donor');
@@ -49,12 +39,6 @@ export default function Home() {
       setError(err.message || 'Failed to sign in. Please try again.');
       setLoading(false);
     }
-  };
-
-  const autofillDemo = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('password123');
-    setError(null);
   };
 
   return (
@@ -131,25 +115,6 @@ export default function Home() {
             <UserPlus size={14} color="var(--donor-primary-bright)" />
             Register Patient
           </button>
-        </div>
-
-        {/* Quick Access / Demo Action Bar */}
-        <div className={styles.demoSection}>
-          <p className={styles.demoTitle}>⚡ Quick Demo Sign In & Actions:</p>
-          <div className={styles.demoPills}>
-            <button className={styles.demoPill} onClick={() => autofillDemo('donor@damlink.com')}>
-              🩸 Donor Demo
-            </button>
-            <button className={styles.demoPill} onClick={() => autofillDemo('bystander@damlink.com')}>
-              🚨 Bystander Demo
-            </button>
-            <button className={styles.patientPill} onClick={() => router.push('/patient/register')}>
-              🏥 Register Patient
-            </button>
-            <button className={styles.demoPill} onClick={() => window.open('http://localhost:3000/login?demo=true', '_blank')}>
-              🏥 Hospital Dashboard ↗
-            </button>
-          </div>
         </div>
       </div>
     </div>
