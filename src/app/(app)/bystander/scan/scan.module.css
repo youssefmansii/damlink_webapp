@@ -75,6 +75,7 @@
 .galleryButton:focus-visible,
 .submitButton:focus-visible,
 .closeWebcamBtn:focus-visible,
+.flipCameraBtn:focus-visible,
 .snapBtn:focus-visible,
 .retakeButton:focus-visible {
   outline: 3px solid rgba(221, 31, 42, 0.35);
@@ -265,11 +266,30 @@
   cursor: pointer;
 }
 
+.flipCameraBtn {
+  position: absolute;
+  top: 24px;
+  right: 16px;
+  z-index: 10;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 22px;
+  border: none;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .webcamHeader {
   position: absolute;
   top: 24px;
   left: 72px;
-  right: 16px;
+  right: 118px;
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -392,5 +412,7 @@
 
   .webcamHeader {
     right: 12px;
+    top: 76px;
+    left: 16px;
   }
 }

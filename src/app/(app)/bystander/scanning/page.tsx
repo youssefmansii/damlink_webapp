@@ -6,7 +6,9 @@ import { supabase } from '@/lib/supabase';
 import { ScanFace, CheckCircle, Loader2 } from 'lucide-react';
 import styles from './scanning.module.css';
 
-const STEP_LABELS: Record<string, string[]> = {
+type ScanMode = 'face' | 'national_id' | 'drivers_license';
+
+const STEP_LABELS: Record<ScanMode, string[]> = {
   face: [
     'Uploading image securely…',
     'Running facial recognition (AWS Rekognition)…',
@@ -25,19 +27,17 @@ const STEP_LABELS: Record<string, string[]> = {
     'Extracting identity fields…',
     'Looking up patient record…',
   ],
-  university_id: [
-    'Uploading image securely…',
-    'Running OCR on University ID…',
-    'Extracting identity fields…',
-    'Looking up patient record…',
-  ],
 };
+
+function normalizeScanMode(value: string | null): ScanMode {
+  return value === 'national_id' || value === 'drivers_license' ? value : 'face';
+}
 
 function ScanningContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const mode = searchParams.get('mode') || 'face';
-  const steps = STEP_LABELS[mode] || STEP_LABELS['face'];
+  const mode = normalizeScanMode(searchParams.get('mode'));
+  const steps = STEP_LABELS[mode];
   const [currentStep, setCurrentStep] = useState(0);
   const scanStartedRef = useRef(false);
 

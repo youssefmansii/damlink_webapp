@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowRightLeft, User, CreditCard, Car, GraduationCap, ChevronRight, AlertCircle } from 'lucide-react';
+import { ArrowRightLeft, User, CreditCard, Car, ChevronRight, AlertCircle } from 'lucide-react';
 import styles from './bystander.module.css';
 
-type ScanMode = 'face' | 'national_id' | 'drivers_license' | 'university_id';
+type ScanMode = 'face' | 'national_id' | 'drivers_license';
 
 interface ScanOption {
   mode: ScanMode;
@@ -33,12 +33,6 @@ const SCAN_OPTIONS: ScanOption[] = [
     icon: Car,
     label: "Driver's License",
     description: "Scan driver's license document (OCR)",
-  },
-  {
-    mode: 'university_id',
-    icon: GraduationCap,
-    label: 'University ID',
-    description: 'Scan university student ID card (OCR)',
   },
 ];
 

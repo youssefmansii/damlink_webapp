@@ -3,37 +3,34 @@
 import { useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Webcam from 'react-webcam';
-import { ArrowLeft, User, CreditCard, Car, GraduationCap, Info, Camera, Image as ImageIcon, Search, RotateCcw, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, CreditCard, Car, Info, Camera, Image as ImageIcon, Search, RotateCcw, X, Loader2, SwitchCamera } from 'lucide-react';
 import styles from './scan.module.css';
 
-type ScanMode = 'face' | 'national_id' | 'drivers_license' | 'university_id';
+type ScanMode = 'face' | 'national_id' | 'drivers_license';
+type CameraFacing = 'user' | 'environment';
 
 const MODE_LABELS: Record<ScanMode, string> = {
   face: 'Face Scan',
   national_id: 'National ID',
   drivers_license: "Driver's License",
-  university_id: 'University ID',
 };
 
 const MODE_ICONS: Record<ScanMode, any> = {
   face: User,
   national_id: CreditCard,
   drivers_license: Car,
-  university_id: GraduationCap,
 };
 
 const MODE_INSTRUCTIONS: Record<ScanMode, string> = {
   face: "Position the victim's face inside the oval. Keep the face well lit and unobstructed.",
   national_id: 'Place the front of the National ID inside the rectangle. Keep the number line sharp and visible.',
   drivers_license: "Place the front of the driver's license inside the rectangle. Keep the name and photo visible.",
-  university_id: 'Place the university ID inside the rectangle. Keep the name and photo clearly visible.',
 };
 
 const GUIDE_LABELS: Record<ScanMode, string> = {
   face: 'Align face inside frame',
   national_id: 'Align National ID inside frame',
   drivers_license: "Align driver's license inside frame",
-  university_id: 'Align university ID inside frame',
 };
 
 function ScanContent() {
@@ -50,6 +47,7 @@ function ScanContent() {
   const [selectedMode, setSelectedMode] = useState<ScanMode>(initialMode);
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [showWebcamModal, setShowWebcamModal] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<CameraFacing>(initialMode === 'face' ? 'user' : 'environment');
   const [submitting, setSubmitting] = useState(false);
   const webcamRef = useRef<Webcam>(null);
   const guideRef = useRef<HTMLDivElement>(null);
@@ -177,6 +175,7 @@ function ScanContent() {
                 onClick={() => {
                   submitStartedRef.current = false;
                   setSelectedMode(m);
+                  setCameraFacing(m === 'face' ? 'user' : 'environment');
                   setCapturedUri(null);
                 }}
               >
@@ -271,16 +270,27 @@ function ScanContent() {
             <X size={24} color="#FFFFFF" />
           </button>
 
+          <button
+            type="button"
+            className={styles.flipCameraBtn}
+            onClick={() => setCameraFacing((current) => current === 'user' ? 'environment' : 'user')}
+            aria-label={cameraFacing === 'user' ? 'Switch to back camera' : 'Switch to selfie camera'}
+          >
+            <SwitchCamera size={22} color="#FFFFFF" />
+            <span>{cameraFacing === 'user' ? 'Selfie' : 'Back'}</span>
+          </button>
+
           <div className={styles.webcamHeader}>
             <span className={styles.webcamTitle}>{MODE_LABELS[selectedMode]}</span>
-            <span className={styles.webcamHint}>{GUIDE_LABELS[selectedMode]}</span>
+            <span className={styles.webcamHint}>{GUIDE_LABELS[selectedMode]} · {cameraFacing === 'user' ? 'Selfie camera' : 'Back camera'}</span>
           </div>
 
           <Webcam
+            key={cameraFacing}
             audio={false}
             ref={webcamRef}
             screenshotFormat="image/jpeg"
-            videoConstraints={{ facingMode: selectedMode === 'face' ? 'user' : 'environment' }}
+            videoConstraints={{ facingMode: cameraFacing }}
             className={styles.webcamView}
           />
 
