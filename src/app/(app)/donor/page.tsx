@@ -20,7 +20,8 @@ const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
   'AB+': ['AB+'],
 };
 
-const HIDDEN_DONOR_DISPATCH_STATUSES = new Set(['completed', 'declined', 'no_show']);
+const ACTIVE_DONOR_REQUEST_STATUSES = ['donor_matching', 'donor_dispatched'];
+const NEARBY_RADIUS_KM = 25;
 
 export default function DonorDashboard() {
   const router = useRouter();
@@ -67,42 +68,35 @@ export default function DonorDashboard() {
     setIsActive(userDonor?.is_active ?? true);
     setDonorLocation(currentLocation);
 
-    // 2. Fetch only requests dispatched to this donor.
+    // 2. Fetch nearby compatible requests that are ready for donors.
     const donorBloodType = userProfile.blood_type || 'A-';
     const compatibleTypes = DONOR_CAN_GIVE_TO[donorBloodType] || ['A-', 'A+', 'AB-', 'AB+'];
-    const { data: dispatchRows, error: dispatchErr } = await supabase
-      .from('donor_dispatches')
+
+    const { data: requestRows, error: requestErr } = await supabase
+      .from('emergency_requests')
       .select(`
-        request_id,
-        status,
-        emergency_requests!inner (
-          *,
-          hospitals(name, address, phone, location)
-        )
+        *,
+        hospitals(name, address, phone, location)
       `)
-      .eq('donor_user_id', user.id)
-      .in('status', ['notified', 'accepted', 'en_route']);
+      .in('status', ACTIVE_DONOR_REQUEST_STATUSES)
+      .in('blood_type_needed', compatibleTypes);
 
     let finalRequests: any[] = [];
 
-    if (!dispatchErr && dispatchRows && dispatchRows.length > 0) {
-      finalRequests = dispatchRows
-        .map((dispatch: any) => ({
-          ...dispatch.emergency_requests,
-          donorDispatchStatus: dispatch.status,
-        }))
-        .filter((request: any) =>
-          ['donor_matching', 'donor_dispatched'].includes(request.status) &&
-          compatibleTypes.includes(request.blood_type_needed)
-        )
+    if (!requestErr && requestRows && requestRows.length > 0 && userDonor?.is_active !== false) {
+      finalRequests = requestRows
         .map((request: any) => {
           const hospitalPoint = parseGeoPoint(request.hospitals?.location);
+          const distanceKm = currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null;
           return {
             ...request,
             hospitalPoint,
-            distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
+            distanceKm,
           };
-        });
+        })
+        .filter((request: any) =>
+          request.distanceKm == null || request.distanceKm <= NEARBY_RADIUS_KM
+        );
     }
 
     // Sort exact blood type match first, then nearest real hospital.

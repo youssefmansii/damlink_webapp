@@ -19,7 +19,8 @@ const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
   'AB+': ['AB+'],
 };
 
-const HIDDEN_DONOR_DISPATCH_STATUSES = new Set(['completed', 'declined', 'no_show']);
+const ACTIVE_DONOR_REQUEST_STATUSES = ['donor_matching', 'donor_dispatched'];
+const NEARBY_RADIUS_KM = 25;
 
 export default function MapScreen() {
   const router = useRouter();
@@ -50,19 +51,19 @@ export default function MapScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       let userBloodType = 'A-';
       let currentLocation: GeoPoint | null = null;
-      let userId: string | null = null;
+      let isActiveDonor = true;
 
       if (user) {
-        userId = user.id;
         const { data: p } = await supabase.from('profiles').select('blood_type').eq('id', user.id).maybeSingle();
         if (p?.blood_type) userBloodType = p.blood_type;
 
         const { data: donor } = await supabase
           .from('donor_profiles')
-          .select('location')
+          .select('location, is_active')
           .eq('user_id', user.id)
           .maybeSingle();
         currentLocation = parseGeoPoint(donor?.location);
+        isActiveDonor = donor?.is_active ?? true;
       }
 
       currentLocation = currentLocation ?? await getBrowserLocation();
@@ -73,38 +74,30 @@ export default function MapScreen() {
 
       let finalRequests: any[] = [];
 
-      if (userId) {
+      if (isActiveDonor) {
         const { data, error } = await supabase
-          .from('donor_dispatches')
+          .from('emergency_requests')
           .select(`
-            request_id,
-            status,
-            emergency_requests!inner (
-              *,
-              hospitals(name, address, phone, location)
-            )
+            *,
+            hospitals(name, address, phone, location)
           `)
-          .eq('donor_user_id', userId)
-          .in('status', ['notified', 'accepted', 'en_route']);
+          .in('status', ACTIVE_DONOR_REQUEST_STATUSES)
+          .in('blood_type_needed', compatibleTypes);
 
         if (!error && data && data.length > 0) {
           finalRequests = data
-            .map((dispatch: any) => ({
-              ...dispatch.emergency_requests,
-              donorDispatchStatus: dispatch.status,
-            }))
-            .filter((request: any) =>
-              ['donor_matching', 'donor_dispatched'].includes(request.status) &&
-              compatibleTypes.includes(request.blood_type_needed)
-            )
             .map((request: any) => {
               const hospitalPoint = parseGeoPoint(request.hospitals?.location);
+              const distanceKm = currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null;
               return {
                 ...request,
                 hospitalPoint,
-                distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
+                distanceKm,
               };
-            });
+            })
+            .filter((request: any) =>
+              request.distanceKm == null || request.distanceKm <= NEARBY_RADIUS_KM
+            );
         }
       }
 
