@@ -22,6 +22,17 @@ const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
 
 const ACTIVE_DONOR_REQUEST_STATUSES = ['donor_matching', 'donor_dispatched'];
 const NEARBY_RADIUS_KM = 25;
+const DONATION_COOLDOWN_DAYS = 90;
+
+function getDonationCooldownUntil(donorProfile: any): Date | null {
+  const lastDonationDate = donorProfile?.last_donation_date || donorProfile?.donor_last_donation_date;
+  if (!lastDonationDate) return null;
+
+  const cooldownUntil = new Date(lastDonationDate);
+  cooldownUntil.setDate(cooldownUntil.getDate() + DONATION_COOLDOWN_DAYS);
+
+  return cooldownUntil > new Date() ? cooldownUntil : null;
+}
 
 export default function DonorDashboard() {
   const router = useRouter();
@@ -31,6 +42,7 @@ export default function DonorDashboard() {
   const [requests, setRequests] = useState<any[]>([]);
   const [isActive, setIsActive] = useState(true);
   const [donorLocation, setDonorLocation] = useState<GeoPoint | null>(null);
+  const [cooldownUntil, setCooldownUntil] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -59,14 +71,16 @@ export default function DonorDashboard() {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
     const { data: d } = await supabase.from('donor_profiles').select('*').eq('user_id', user.id).maybeSingle();
 
-    const userProfile = p || { full_name: user.email?.split('@')[0] || 'youssef mansi', blood_type: 'A-' };
-    const userDonor = d || { donations_count: 5, lives_saved_estimate: 15, is_active: true };
+    const userProfile = p || { full_name: user.email?.split('@')[0] || 'Donor', blood_type: 'A-' };
+    const userDonor = d || { donations_count: 0, lives_saved_estimate: 0, is_active: false };
     const currentLocation = parseGeoPoint(userDonor?.location) ?? await getBrowserLocation();
 
     setProfile(userProfile);
     setDonorProfile(userDonor);
     setIsActive(userDonor?.is_active ?? true);
     setDonorLocation(currentLocation);
+    const activeCooldownUntil = getDonationCooldownUntil(userDonor);
+    setCooldownUntil(activeCooldownUntil);
 
     // 2. Fetch nearby compatible requests that are ready for donors.
     const donorBloodType = userProfile.blood_type || 'A-';
@@ -83,7 +97,7 @@ export default function DonorDashboard() {
 
     let finalRequests: any[] = [];
 
-    if (!requestErr && requestRows && requestRows.length > 0 && userDonor?.is_active !== false) {
+    if (!requestErr && requestRows && requestRows.length > 0 && userDonor?.is_active !== false && !activeCooldownUntil) {
       finalRequests = requestRows
         .map((request: any) => {
           const hospitalPoint = parseGeoPoint(request.hospitals?.location);
@@ -110,7 +124,7 @@ export default function DonorDashboard() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
-    setRequests(finalRequests.slice(0, 3));
+    setRequests(finalRequests);
     setLoading(false);
   };
 
@@ -145,6 +159,16 @@ export default function DonorDashboard() {
   }
 
   const homeRequests = requests.slice(0, 2);
+  const cooldownDate = cooldownUntil?.toLocaleDateString('en-EG', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+  const emptyMessage = cooldownDate
+    ? `You can donate again after ${cooldownDate}.`
+    : isActive
+      ? `No blood requests matching your donor type (${profile?.blood_type}) right now. New requests will appear here live.`
+      : 'Turn on Active Donor when you are available to receive nearby requests.';
 
   return (
     <div className={styles.screen}>
@@ -186,12 +210,12 @@ export default function DonorDashboard() {
       {/* Stats Card */}
       <div className={styles.statsCard}>
         <div className={styles.statItem}>
-          <span className={styles.statValue}>{donorProfile?.donations_count ?? 5}</span>
+          <span className={styles.statValue}>{donorProfile?.donations_count ?? 0}</span>
           <span className={styles.statLabel}>Donations</span>
         </div>
         <div className={styles.statDivider} />
         <div className={styles.statItem}>
-          <span className={styles.statValue}>{donorProfile?.lives_saved_estimate ?? 15}</span>
+          <span className={styles.statValue}>{donorProfile?.lives_saved_estimate ?? 0}</span>
           <span className={styles.statLabel}>Lives Saved</span>
         </div>
         <div className={styles.statDivider} />
@@ -214,7 +238,7 @@ export default function DonorDashboard() {
           <CheckCircle2 size={32} color="var(--donor-success)" />
           <span className={styles.emptyTitle}>No compatible active requests</span>
           <span className={styles.emptySubtitle}>
-            No blood requests matching your donor type ({profile?.blood_type}) right now. New requests will appear here live.
+            {emptyMessage}
           </span>
         </div>
       ) : (

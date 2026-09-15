@@ -31,6 +31,7 @@ export default function MatchResultScreen() {
   };
 
   const handleNotify = async () => {
+    if (notifying) return;
     setNotifying(true);
 
     try {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { ScanFace, CheckCircle, Loader2 } from 'lucide-react';
@@ -39,8 +39,11 @@ function ScanningContent() {
   const mode = searchParams.get('mode') || 'face';
   const steps = STEP_LABELS[mode] || STEP_LABELS['face'];
   const [currentStep, setCurrentStep] = useState(0);
+  const scanStartedRef = useRef(false);
 
   useEffect(() => {
+    if (scanStartedRef.current) return;
+    scanStartedRef.current = true;
     runScanProcess();
   }, []);
 
@@ -67,6 +70,28 @@ function ScanningContent() {
   const runScanProcess = async () => {
     try {
       const imageUri = sessionStorage.getItem('damlink_scan_image');
+      const clientRequestId =
+        sessionStorage.getItem('damlink_scan_client_request_id') ||
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      sessionStorage.setItem('damlink_scan_client_request_id', clientRequestId);
+
+      const activeScanRaw = sessionStorage.getItem('damlink_scan_inflight');
+      if (activeScanRaw) {
+        try {
+          const activeScan = JSON.parse(activeScanRaw) as { id?: string; startedAt?: number };
+          const isSameScan = activeScan.id === clientRequestId;
+          const isFresh = Date.now() - Number(activeScan.startedAt ?? 0) < 120000;
+          if (isSameScan && isFresh) return;
+        } catch {
+          sessionStorage.removeItem('damlink_scan_inflight');
+        }
+      }
+
+      sessionStorage.setItem(
+        'damlink_scan_inflight',
+        JSON.stringify({ id: clientRequestId, startedAt: Date.now() })
+      );
+
       const coords = await getCoordinates();
       let imageRef = `bystander/scan_${Date.now()}.jpg`;
 
@@ -81,6 +106,7 @@ function ScanningContent() {
           scan_mode: mode,
           image_ref: imageRef,
           image_base64: base64Payload,
+          client_request_id: clientRequestId,
           bystander_lat: coords.lat,
           bystander_lng: coords.lng,
         },
@@ -114,6 +140,7 @@ function ScanningContent() {
       }, 800);
     } catch (err) {
       console.error('[Scanning] Error:', err);
+      sessionStorage.removeItem('damlink_scan_inflight');
       router.push(`/bystander/no-match?reason=scan_error&mode=${mode}`);
     }
   };

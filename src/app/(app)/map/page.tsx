@@ -21,6 +21,17 @@ const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
 
 const ACTIVE_DONOR_REQUEST_STATUSES = ['donor_matching', 'donor_dispatched'];
 const NEARBY_RADIUS_KM = 25;
+const DONATION_COOLDOWN_DAYS = 90;
+
+function isInDonationCooldown(donorProfile: any): boolean {
+  const lastDonationDate = donorProfile?.last_donation_date || donorProfile?.donor_last_donation_date;
+  if (!lastDonationDate) return false;
+
+  const cooldownUntil = new Date(lastDonationDate);
+  cooldownUntil.setDate(cooldownUntil.getDate() + DONATION_COOLDOWN_DAYS);
+
+  return cooldownUntil > new Date();
+}
 
 export default function MapScreen() {
   const router = useRouter();
@@ -52,6 +63,7 @@ export default function MapScreen() {
       let userBloodType = 'A-';
       let currentLocation: GeoPoint | null = null;
       let isActiveDonor = true;
+      let isCoolingDown = false;
 
       if (user) {
         const { data: p } = await supabase.from('profiles').select('blood_type').eq('id', user.id).maybeSingle();
@@ -59,11 +71,12 @@ export default function MapScreen() {
 
         const { data: donor } = await supabase
           .from('donor_profiles')
-          .select('location, is_active')
+          .select('location, is_active, last_donation_date, donor_last_donation_date')
           .eq('user_id', user.id)
           .maybeSingle();
         currentLocation = parseGeoPoint(donor?.location);
         isActiveDonor = donor?.is_active ?? true;
+        isCoolingDown = isInDonationCooldown(donor);
       }
 
       currentLocation = currentLocation ?? await getBrowserLocation();
@@ -74,7 +87,7 @@ export default function MapScreen() {
 
       let finalRequests: any[] = [];
 
-      if (isActiveDonor) {
+      if (isActiveDonor && !isCoolingDown) {
         const { data, error } = await supabase
           .from('emergency_requests')
           .select(`
@@ -112,7 +125,7 @@ export default function MapScreen() {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
-      const nearbyRequests = finalRequests.slice(0, 3);
+      const nearbyRequests = finalRequests;
 
       setActiveRequests(nearbyRequests);
       setSelectedRequest(nearbyRequests[0]);
@@ -184,7 +197,7 @@ export default function MapScreen() {
           {/* List of All Active Emergency Request Cards — Click to respond */}
           <div className={styles.cardsList}>
             <div className={styles.listTitle}>
-              Active Nearby Dispatches ({activeRequests.length})
+              Active Nearby Requests ({activeRequests.length})
             </div>
 
             {activeRequests.length === 0 ? (

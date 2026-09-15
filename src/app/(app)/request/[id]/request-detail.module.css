@@ -254,3 +254,20 @@
   color: #1EA35A;
   line-height: 1.4;
 }
+
+.pendingConfirmation {
+  background-color: #F0FFF6;
+  border: 1px solid #C3F0D8;
+  border-radius: 14px;
+  min-height: 54px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #166534;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Droplet, Loader2 } from 'lucide-react';
+import { CheckCircle2, Droplet, Loader2 } from 'lucide-react';
 import styles from './history.module.css';
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -56,29 +56,7 @@ export default function HistoryScreen() {
         .eq('donor_user_id', user.id)
         .order('notified_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        setHistory(data);
-      } else {
-        // Fallback default history items if user has no dispatch rows yet
-        setHistory([
-          {
-            id: '1',
-            hospitalName: 'Al-Haram Hospital',
-            date: '15 Jun 2026',
-            bloodType: 'O+',
-            status: 'Completed',
-            statusColor: 'var(--donor-success)',
-          },
-          {
-            id: '2',
-            hospitalName: 'Kasr Al Ainy Hospital',
-            date: '02 Mar 2026',
-            bloodType: 'O+',
-            status: 'Completed',
-            statusColor: 'var(--donor-success)',
-          },
-        ]);
-      }
+      setHistory(!error && data ? data : []);
     } catch (err) {
       console.error('[History] Fetch error:', err);
     } finally {
@@ -100,14 +78,18 @@ export default function HistoryScreen() {
         <h1 className={styles.title}>Donation History</h1>
         <p className={styles.subtitle}>Your completed and active donor missions</p>
 
-        {history.map((item) => {
+        {history.length === 0 ? (
+          <div className={styles.emptyBox}>
+            <CheckCircle2 size={32} color="var(--donor-success)" />
+            <strong>No donation history yet</strong>
+            <span>Accepted and hospital-confirmed donor missions will appear here.</span>
+          </div>
+        ) : history.map((item) => {
           const req = item.emergency_requests;
-          const hospitalName = item.hospitalName || req?.hospitals?.name || 'Al-Haram Hospital';
-          const bloodType = item.bloodType || req?.blood_type_needed || 'O+';
-          const dateText = item.date || formatDate(item.responded_at || item.notified_at);
-          const statusInfo = item.statusColor
-            ? { label: item.status, color: item.statusColor }
-            : STATUS_LABEL[item.status] || { label: item.status, color: '#7A8499' };
+          const hospitalName = req?.hospitals?.name || 'Hospital';
+          const bloodType = req?.blood_type_needed || 'Unknown';
+          const dateText = formatDate(item.responded_at || item.notified_at);
+          const statusInfo = STATUS_LABEL[item.status] || { label: item.status, color: '#7A8499' };
 
           return (
             <div key={item.id} className={styles.card}>

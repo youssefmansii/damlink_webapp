@@ -54,6 +54,7 @@ function ScanContent() {
   const webcamRef = useRef<Webcam>(null);
   const guideRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const submitStartedRef = useRef(false);
 
   const cropDocumentFromVideo = () => {
     const video = webcamRef.current?.video as HTMLVideoElement | null;
@@ -109,6 +110,7 @@ function ScanContent() {
       : webcamRef.current?.getScreenshot();
 
     if (imageSrc) {
+      submitStartedRef.current = false;
       setCapturedUri(imageSrc);
       setShowWebcamModal(false);
     }
@@ -119,6 +121,7 @@ function ScanContent() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
+        submitStartedRef.current = false;
         setCapturedUri(reader.result as string);
       };
       reader.readAsDataURL(file);
@@ -126,12 +129,20 @@ function ScanContent() {
   };
 
   const handleSubmitScan = () => {
-    if (!capturedUri) return;
+    if (!capturedUri || submitStartedRef.current) return;
+    submitStartedRef.current = true;
     setSubmitting(true);
+
+    const requestKey =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
     // Store captured image in session storage for the scanning step
     sessionStorage.setItem('damlink_scan_image', capturedUri);
     sessionStorage.setItem('damlink_scan_mode', selectedMode);
+    sessionStorage.setItem('damlink_scan_client_request_id', requestKey);
+    sessionStorage.removeItem('damlink_scan_inflight');
 
     setTimeout(() => {
       router.push(`/bystander/scanning?mode=${selectedMode}`);
@@ -164,6 +175,7 @@ function ScanContent() {
                 key={m}
                 className={`${styles.modeChip} ${isActive ? styles.modeChipActive : ''}`}
                 onClick={() => {
+                  submitStartedRef.current = false;
                   setSelectedMode(m);
                   setCapturedUri(null);
                 }}
@@ -185,7 +197,13 @@ function ScanContent() {
         {capturedUri ? (
           <div className={styles.previewWrap}>
             <img src={capturedUri} alt="Victim scan preview" className={styles.previewImage} />
-            <button className={styles.retakeButton} onClick={() => setCapturedUri(null)}>
+            <button
+              className={styles.retakeButton}
+              onClick={() => {
+                submitStartedRef.current = false;
+                setCapturedUri(null);
+              }}
+            >
               <RotateCcw size={16} color="#FFFFFF" />
               <span>Retake</span>
             </button>

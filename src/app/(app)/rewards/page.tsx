@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Gift, Loader2 } from 'lucide-react';
+import { Gift, Loader2, Trophy } from 'lucide-react';
 import styles from './rewards.module.css';
 
 export default function RewardsScreen() {
@@ -10,7 +10,6 @@ export default function RewardsScreen() {
   const [pointsBalance, setPointsBalance] = useState<number>(0);
   const [rewards, setRewards] = useState<any[]>([]);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRewardsData();
@@ -21,7 +20,6 @@ export default function RewardsScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      setUserId(user.id);
 
       // 1. Fetch rewards list from DB
       const { data: rewardsData } = await supabase
@@ -30,32 +28,7 @@ export default function RewardsScreen() {
         .eq('active', true)
         .order('points_cost', { ascending: true });
 
-      // Fallback default rewards if rewards table is empty
-      const defaultRewards = [
-        {
-          id: '11111111-0000-0000-0000-000000000001',
-          title: 'Free Coffee',
-          sponsor_name: 'Starbucks Egypt',
-          description: 'Get a free tall coffee of your choice at any participating location.',
-          points_cost: 500,
-        },
-        {
-          id: '11111111-0000-0000-0000-000000000002',
-          title: '15% Off Pharmacy Purchase',
-          sponsor_name: 'El-Ezaby Pharmacy',
-          description: 'Valid for all non-prescription medications and cosmetics.',
-          points_cost: 1000,
-        },
-        {
-          id: '11111111-0000-0000-0000-000000000003',
-          title: 'Free Uber Ride',
-          sponsor_name: 'Uber Egypt',
-          description: 'One free ride up to 100 EGP to any hospital or blood bank.',
-          points_cost: 1500,
-        },
-      ];
-
-      setRewards(rewardsData && rewardsData.length > 0 ? rewardsData : defaultRewards);
+      setRewards(rewardsData ?? []);
 
       // 2. Fetch points balance from donor_profiles
       const { data: donorData } = await supabase
@@ -64,7 +37,7 @@ export default function RewardsScreen() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      setPointsBalance(donorData?.points_balance ?? 1250);
+      setPointsBalance(donorData?.points_balance ?? 0);
     } catch (err) {
       console.error('[Rewards] Fetch error:', err);
     } finally {
@@ -81,25 +54,19 @@ export default function RewardsScreen() {
     setRedeemingId(reward.id);
 
     try {
-      // Attempt redeem_reward RPC call
       const { data, error } = await supabase.rpc('redeem_reward', { p_reward_id: reward.id });
+      if (error) throw error;
 
-      if (error) {
-        // Fallback DB update if RPC is missing
-        const newBalance = pointsBalance - reward.points_cost;
-        if (userId) {
-          await supabase.from('donor_profiles').update({ points_balance: newBalance }).eq('user_id', userId);
-          await supabase.from('user_rewards').insert({ user_id: userId, reward_id: reward.id });
-        }
-        setPointsBalance(newBalance);
-      } else if (data?.new_balance != null) {
+      if (data?.new_balance != null) {
         setPointsBalance(data.new_balance);
+      } else {
+        await fetchRewardsData();
       }
 
       alert(`Success! Redeemed "${reward.title}" for ${reward.points_cost} points.`);
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Reward redeemed successfully!');
+      alert(err.message || 'Could not redeem this reward.');
     } finally {
       setRedeemingId(null);
     }
@@ -126,7 +93,13 @@ export default function RewardsScreen() {
       <div className={styles.content}>
         <h2 className={styles.sectionTitle}>Available Rewards</h2>
 
-        {rewards.map((reward) => (
+        {rewards.length === 0 ? (
+          <div className={styles.emptyBox}>
+            <Trophy size={32} color="var(--donor-primary-bright)" />
+            <strong>No rewards available yet</strong>
+            <span>Real sponsor rewards will appear here after they are added in Supabase.</span>
+          </div>
+        ) : rewards.map((reward) => (
           <div key={reward.id} className={styles.rewardCard}>
             <div className={styles.rewardHeader}>
               <Gift size={24} color="var(--donor-primary-bright)" />

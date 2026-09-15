@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, CheckCircle2, XCircle, Phone, MapPin, Navigation, Droplet, Clock, Loader2, Heart } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Phone, MapPin, Navigation, Clock, Loader2, Heart } from 'lucide-react';
 import { formatDistance, getBrowserLocation, haversineKm, parseGeoPoint, type GeoPoint } from '@/lib/geo';
 import styles from './request-detail.module.css';
 
@@ -30,6 +30,17 @@ const URGENCY_COLOR: Record<string, string> = {
   urgent:   '#E07B00',
   standard: '#1EA35A',
 };
+const DONATION_COOLDOWN_DAYS = 90;
+
+function getDonationCooldownUntil(donorProfile: any): Date | null {
+  const lastDonationDate = donorProfile?.last_donation_date || donorProfile?.donor_last_donation_date;
+  if (!lastDonationDate) return null;
+
+  const cooldownUntil = new Date(lastDonationDate);
+  cooldownUntil.setDate(cooldownUntil.getDate() + DONATION_COOLDOWN_DAYS);
+
+  return cooldownUntil > new Date() ? cooldownUntil : null;
+}
 
 export default function RequestDetailScreen() {
   const router = useRouter();
@@ -98,15 +109,18 @@ export default function RequestDetailScreen() {
       .eq('donor_user_id', user.id)
       .maybeSingle();
 
-    if (data) {
+    if (data?.status === 'accepted' || data?.status === 'en_route') {
       setResponded(true);
-      setResponseStatus(
-        data.status === 'accepted' || data.status === 'en_route'
-          ? 'accepted'
-          : data.status === 'completed'
-            ? 'completed'
-            : 'declined'
-      );
+      setResponseStatus('accepted');
+    } else if (data?.status === 'completed') {
+      setResponded(true);
+      setResponseStatus('completed');
+    } else if (data?.status === 'declined') {
+      setResponded(true);
+      setResponseStatus('declined');
+    } else {
+      setResponded(false);
+      setResponseStatus(null);
     }
   };
 
@@ -115,6 +129,31 @@ export default function RequestDetailScreen() {
     setActionLoading(true);
 
     if (user) {
+      const { data: donorProfile } = await supabase
+        .from('donor_profiles')
+        .select('is_active, donor_eligibility_status, last_donation_date, donor_last_donation_date')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (action === 'accepted' && donorProfile?.is_active === false) {
+        alert('Your donor profile is inactive. Turn on Active Donor before accepting requests.');
+        setActionLoading(false);
+        return;
+      }
+
+      if (action === 'accepted' && donorProfile?.donor_eligibility_status && donorProfile.donor_eligibility_status !== 'eligible') {
+        alert('Your donor profile is not currently eligible to donate.');
+        setActionLoading(false);
+        return;
+      }
+
+      const cooldownUntil = getDonationCooldownUntil(donorProfile);
+      if (action === 'accepted' && cooldownUntil) {
+        alert(`You can donate again after ${cooldownUntil.toLocaleDateString('en-EG')}.`);
+        setActionLoading(false);
+        return;
+      }
+
       const { data: existing } = await supabase
         .from('donor_dispatches')
         .select('id')
@@ -147,52 +186,6 @@ export default function RequestDetailScreen() {
     if (action === 'accepted') {
       alert(`🩸 Request Accepted!\n\nPlease head to ${request?.hospital?.name ?? 'the hospital'} as soon as possible.\n${request?.hospital?.address ?? ''}`);
     }
-  };
-
-  const handleCompleteDonation = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setActionLoading(true);
-
-    if (user) {
-      // 1. Mark dispatch as completed
-      await supabase
-        .from('donor_dispatches')
-        .update({ status: 'completed' })
-        .eq('request_id', requestId)
-        .eq('donor_user_id', user.id);
-
-      // 2. Increment stats in donor_profiles
-      const { data: donorData } = await supabase
-        .from('donor_profiles')
-        .select('donations_count, lives_saved_estimate')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (donorData) {
-        await supabase
-          .from('donor_profiles')
-          .update({
-            donations_count: (donorData.donations_count || 0) + 1,
-            lives_saved_estimate: (donorData.lives_saved_estimate || 0) + 3,
-            last_donation_date: new Date().toISOString().split('T')[0],
-          })
-          .eq('user_id', user.id);
-      }
-
-      // 3. Decrement units needed
-      if (request) {
-        const newUnitsNeeded = Math.max((request.units_needed || 1) - 1, 0);
-        const newStatus = newUnitsNeeded === 0 ? 'resolved' : request.status;
-
-        await supabase
-          .from('emergency_requests')
-          .update({ units_needed: newUnitsNeeded, status: newStatus })
-          .eq('id', requestId);
-      }
-    }
-
-    setResponseStatus('completed');
-    setActionLoading(false);
   };
 
   const openDirections = () => {
@@ -337,21 +330,10 @@ export default function RequestDetailScreen() {
               <Navigation size={20} color="#FFFFFF" />
               <span>Get Directions to Hospital</span>
             </button>
-            <button
-              className={styles.acceptButton}
-              style={{ backgroundColor: '#1EA35A' }}
-              onClick={handleCompleteDonation}
-              disabled={actionLoading}
-            >
-              {actionLoading ? (
-                <Loader2 size={20} color="#FFFFFF" className="animate-spin" />
-              ) : (
-                <>
-                  <Droplet size={20} color="#FFFFFF" />
-                  <span>I Have Donated</span>
-                </>
-              )}
-            </button>
+            <div className={styles.pendingConfirmation}>
+              <CheckCircle2 size={20} color="#1EA35A" />
+              <span>Waiting for hospital staff to confirm the donation.</span>
+            </div>
           </div>
         ) : responseStatus === 'completed' ? (
           <div className={styles.completedBanner}>
