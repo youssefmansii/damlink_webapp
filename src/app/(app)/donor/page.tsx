@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Droplet, Calendar, CheckCircle2, Map, ChevronRight, MapPin, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import LiveRequestMap from '@/components/LiveRequestMap';
-import { formatDistance, getBrowserLocation, haversineKm, parseGeoPoint, type GeoPoint } from '@/lib/geo';
+import { formatDistance, getBrowserLocation, getRouteDistance, parseGeoPoint, type GeoPoint } from '@/lib/geo';
 import styles from './donor.module.css';
 
 // Blood compatibility matrix (Key = Donor Blood Type -> Value = Recipient Blood Types donor CAN give to)
@@ -98,16 +98,20 @@ export default function DonorDashboard() {
     let finalRequests: any[] = [];
 
     if (!requestErr && requestRows && requestRows.length > 0 && userDonor?.is_active !== false && !activeCooldownUntil) {
-      finalRequests = requestRows
-        .map((request: any) => {
+      finalRequests = await Promise.all(requestRows
+        .map(async (request: any) => {
           const hospitalPoint = parseGeoPoint(request.hospitals?.location);
-          const distanceKm = currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null;
+          const route = currentLocation && hospitalPoint ? await getRouteDistance(currentLocation, hospitalPoint) : null;
           return {
             ...request,
             hospitalPoint,
-            distanceKm,
+            distanceKm: route?.distanceKm ?? null,
+            etaMinutes: route?.etaMinutes ?? null,
+            distanceSource: route?.source ?? null,
           };
-        })
+        }));
+
+      finalRequests = finalRequests
         .filter((request: any) =>
           request.distanceKm == null || request.distanceKm <= NEARBY_RADIUS_KM
         );

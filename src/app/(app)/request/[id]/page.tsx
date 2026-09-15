@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, CheckCircle2, XCircle, Phone, MapPin, Navigation, Clock, Loader2, Heart } from 'lucide-react';
-import { formatDistance, getBrowserLocation, haversineKm, parseGeoPoint, type GeoPoint } from '@/lib/geo';
+import { formatDistance, getBrowserLocation, getRouteDistance, parseGeoPoint, type GeoPoint } from '@/lib/geo';
 import styles from './request-detail.module.css';
 
 interface RequestDetail {
@@ -53,6 +53,7 @@ export default function RequestDetailScreen() {
   const [responded, setResponded] = useState(false);
   const [responseStatus, setResponseStatus] = useState<'accepted' | 'declined' | 'completed' | null>(null);
   const [donorLocation, setDonorLocation] = useState<GeoPoint | null>(null);
+  const [routeDistanceKm, setRouteDistanceKm] = useState<number | null>(null);
 
   useEffect(() => {
     if (requestId) {
@@ -60,6 +61,27 @@ export default function RequestDetailScreen() {
       checkPriorResponse();
     }
   }, [requestId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRouteDistance = async () => {
+      const hospitalPoint = parseGeoPoint(request?.hospital?.location);
+      if (!donorLocation || !hospitalPoint) {
+        setRouteDistanceKm(null);
+        return;
+      }
+
+      const route = await getRouteDistance(donorLocation, hospitalPoint);
+      if (!cancelled) setRouteDistanceKm(route.distanceKm);
+    };
+
+    loadRouteDistance();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [donorLocation, request?.hospital?.location]);
 
   const fetchRequest = async () => {
     setLoading(true);
@@ -210,8 +232,6 @@ export default function RequestDetailScreen() {
 
   const urgencyColor = URGENCY_COLOR[request?.urgency || 'urgent'] ?? '#E07B00';
   const hospitalName = request?.hospital?.name || 'Hospital';
-  const hospitalPoint = parseGeoPoint(request?.hospital?.location);
-  const distanceKm = donorLocation && hospitalPoint ? haversineKm(donorLocation, hospitalPoint) : null;
 
   return (
     <div className={styles.screen}>
@@ -287,7 +307,7 @@ export default function RequestDetailScreen() {
           </div>
           <div className={styles.detailRow}>
             <span className={styles.label}>Distance to Hospital</span>
-            <span className={styles.value}>{formatDistance(distanceKm)}</span>
+            <span className={styles.value}>{formatDistance(routeDistanceKm)}</span>
           </div>
 
           {request?.accident_notes && (

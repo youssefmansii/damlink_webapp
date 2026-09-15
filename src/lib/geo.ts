@@ -46,6 +46,47 @@ export function haversineKm(a: GeoPoint, b: GeoPoint): number {
   return 2 * earthRadiusKm * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
 }
 
+export interface RouteDistance {
+  distanceKm: number;
+  etaMinutes: number;
+  source: 'route' | 'straight_line';
+}
+
+export async function getRouteDistance(a: GeoPoint, b: GeoPoint): Promise<RouteDistance> {
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), 2500);
+
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=false`;
+    const response = await fetch(url, { signal: controller.signal });
+
+    if (response.ok) {
+      const data = await response.json();
+      const route = data?.routes?.[0];
+      const distanceMeters = Number(route?.distance);
+      const durationSeconds = Number(route?.duration);
+      if (Number.isFinite(distanceMeters) && Number.isFinite(durationSeconds)) {
+        return {
+          distanceKm: distanceMeters / 1000,
+          etaMinutes: Math.max(1, Math.round(durationSeconds / 60)),
+          source: 'route',
+        };
+      }
+    }
+  } catch {
+    // The public route API is best-effort; fall back to stable local math.
+  } finally {
+    globalThis.clearTimeout(timeout);
+  }
+
+  const distanceKm = haversineKm(a, b);
+  return {
+    distanceKm,
+    etaMinutes: Math.max(1, Math.round((distanceKm / 35) * 60)),
+    source: 'straight_line',
+  };
+}
+
 export function formatDistance(distanceKm: number | null | undefined): string {
   if (distanceKm == null || !Number.isFinite(distanceKm)) return 'Distance unavailable';
   if (distanceKm < 1) return `${Math.round(distanceKm * 1000)} m`;

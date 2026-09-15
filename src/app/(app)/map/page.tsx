@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { MapPin, Navigation, Loader2, Hospital, Droplet, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import LiveRequestMap from '@/components/LiveRequestMap';
-import { formatDistance, getBrowserLocation, haversineKm, parseGeoPoint, type GeoPoint } from '@/lib/geo';
+import { formatDistance, getBrowserLocation, getRouteDistance, parseGeoPoint, type GeoPoint } from '@/lib/geo';
 import styles from './map.module.css';
 
 const DONOR_CAN_GIVE_TO: Record<string, string[]> = {
@@ -98,16 +98,20 @@ export default function MapScreen() {
           .in('blood_type_needed', compatibleTypes);
 
         if (!error && data && data.length > 0) {
-          finalRequests = data
-            .map((request: any) => {
+          finalRequests = await Promise.all(data
+            .map(async (request: any) => {
               const hospitalPoint = parseGeoPoint(request.hospitals?.location);
-              const distanceKm = currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null;
+              const route = currentLocation && hospitalPoint ? await getRouteDistance(currentLocation, hospitalPoint) : null;
               return {
                 ...request,
                 hospitalPoint,
-                distanceKm,
+                distanceKm: route?.distanceKm ?? null,
+                etaMinutes: route?.etaMinutes ?? null,
+                distanceSource: route?.source ?? null,
               };
-            })
+            }));
+
+          finalRequests = finalRequests
             .filter((request: any) =>
               request.distanceKm == null || request.distanceKm <= NEARBY_RADIUS_KM
             );
