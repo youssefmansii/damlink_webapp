@@ -67,44 +67,42 @@ export default function DonorDashboard() {
     setIsActive(userDonor?.is_active ?? true);
     setDonorLocation(currentLocation);
 
-    // 2. Fetch active & compatible emergency requests
+    // 2. Fetch only requests dispatched to this donor.
     const donorBloodType = userProfile.blood_type || 'A-';
     const compatibleTypes = DONOR_CAN_GIVE_TO[donorBloodType] || ['A-', 'A+', 'AB-', 'AB+'];
-
-    let query = supabase
-      .from('emergency_requests')
-      .select('*, hospitals(name, address, phone, location)')
-      .in('status', ['pending', 'hospital_notified', 'donor_matching'])
-      .in('blood_type_needed', compatibleTypes);
-
-    const { data: reqData, error: reqErr } = await query;
+    const { data: dispatchRows, error: dispatchErr } = await supabase
+      .from('donor_dispatches')
+      .select(`
+        request_id,
+        status,
+        emergency_requests!inner (
+          *,
+          hospitals(name, address, phone, location)
+        )
+      `)
+      .eq('donor_user_id', user.id)
+      .in('status', ['notified', 'accepted', 'en_route']);
 
     let finalRequests: any[] = [];
 
-    if (!reqErr && reqData && reqData.length > 0) {
-      const requestIds = reqData.map((request) => request.id);
-      const { data: donorDispatches } = await supabase
-        .from('donor_dispatches')
-        .select('request_id, status')
-        .eq('donor_user_id', user.id)
-        .in('request_id', requestIds);
-
-      const dispatchStatusByRequest = new globalThis.Map(
-        (donorDispatches ?? []).map((dispatch) => [dispatch.request_id, dispatch.status])
-      );
-
-      finalRequests = reqData.filter((request) => {
-        const donorStatus = dispatchStatusByRequest.get(request.id);
-        return !donorStatus || !HIDDEN_DONOR_DISPATCH_STATUSES.has(donorStatus);
-      }).map((request) => {
-        const hospitalPoint = parseGeoPoint(request.hospitals?.location);
-        return {
-          ...request,
-          donorDispatchStatus: dispatchStatusByRequest.get(request.id) ?? null,
-          hospitalPoint,
-          distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
-        };
-      });
+    if (!dispatchErr && dispatchRows && dispatchRows.length > 0) {
+      finalRequests = dispatchRows
+        .map((dispatch: any) => ({
+          ...dispatch.emergency_requests,
+          donorDispatchStatus: dispatch.status,
+        }))
+        .filter((request: any) =>
+          ['donor_matching', 'donor_dispatched'].includes(request.status) &&
+          compatibleTypes.includes(request.blood_type_needed)
+        )
+        .map((request: any) => {
+          const hospitalPoint = parseGeoPoint(request.hospitals?.location);
+          return {
+            ...request,
+            hospitalPoint,
+            distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
+          };
+        });
     }
 
     // Sort exact blood type match first, then nearest real hospital.

@@ -71,43 +71,41 @@ export default function MapScreen() {
 
       const compatibleTypes = DONOR_CAN_GIVE_TO[userBloodType] || ['A-', 'A+', 'AB-', 'AB+'];
 
-      // Query active & compatible emergency requests
-      const { data, error } = await supabase
-        .from('emergency_requests')
-        .select('*, hospitals(name, address, phone, location)')
-        .in('status', ['pending', 'hospital_notified', 'donor_matching'])
-        .in('blood_type_needed', compatibleTypes);
-
       let finalRequests: any[] = [];
 
-      if (!error && data && data.length > 0) {
-        let dispatchStatusByRequest = new Map<string, string>();
+      if (userId) {
+        const { data, error } = await supabase
+          .from('donor_dispatches')
+          .select(`
+            request_id,
+            status,
+            emergency_requests!inner (
+              *,
+              hospitals(name, address, phone, location)
+            )
+          `)
+          .eq('donor_user_id', userId)
+          .in('status', ['notified', 'accepted', 'en_route']);
 
-        if (userId) {
-          const requestIds = data.map((request) => request.id);
-          const { data: donorDispatches } = await supabase
-            .from('donor_dispatches')
-            .select('request_id, status')
-            .eq('donor_user_id', userId)
-            .in('request_id', requestIds);
-
-          dispatchStatusByRequest = new Map(
-            (donorDispatches ?? []).map((dispatch) => [dispatch.request_id, dispatch.status])
-          );
+        if (!error && data && data.length > 0) {
+          finalRequests = data
+            .map((dispatch: any) => ({
+              ...dispatch.emergency_requests,
+              donorDispatchStatus: dispatch.status,
+            }))
+            .filter((request: any) =>
+              ['donor_matching', 'donor_dispatched'].includes(request.status) &&
+              compatibleTypes.includes(request.blood_type_needed)
+            )
+            .map((request: any) => {
+              const hospitalPoint = parseGeoPoint(request.hospitals?.location);
+              return {
+                ...request,
+                hospitalPoint,
+                distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
+              };
+            });
         }
-
-        finalRequests = data.filter((request) => {
-          const donorStatus = dispatchStatusByRequest.get(request.id);
-          return !donorStatus || !HIDDEN_DONOR_DISPATCH_STATUSES.has(donorStatus);
-        }).map((request) => {
-          const hospitalPoint = parseGeoPoint(request.hospitals?.location);
-          return {
-            ...request,
-            donorDispatchStatus: dispatchStatusByRequest.get(request.id) ?? null,
-            hospitalPoint,
-            distanceKm: currentLocation && hospitalPoint ? haversineKm(currentLocation, hospitalPoint) : null,
-          };
-        });
       }
 
       // Sort exact match first, then nearest real hospital.
