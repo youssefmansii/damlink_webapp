@@ -39,6 +39,7 @@ export default function PatientRegisterScreen() {
   const [isActiveDonor, setIsActiveDonor] = useState(false);
   const [eligibilityAnswers, setEligibilityAnswers] = useState<DonorEligibilityAnswers>(defaultDonorEligibilityAnswers);
   const [showPassword, setShowPassword] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   // Image state
   const [faceImage, setFaceImage] = useState<string | null>(null);
@@ -139,6 +140,10 @@ export default function PatientRegisterScreen() {
       setError('National ID must be 14 digits.');
       return;
     }
+    if (!consent) {
+      setError('Please tick the consent box so DamLink can use your face photo and medical details in an emergency.');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -154,6 +159,10 @@ export default function PatientRegisterScreen() {
             phone: phone.trim(),
             blood_type: bloodType,
             role: 'patient_donor',
+            // Explicit, recorded consent (face photo + health data). Withdrawable by deleting the account.
+            consent_face_and_health: true,
+            consent_at: new Date().toISOString(),
+            consent_version: '2026-10-demo',
           },
         },
       });
@@ -224,6 +233,7 @@ export default function PatientRegisterScreen() {
           medical_conditions: medicalConditions,
           national_id_hash: nationalId.trim(),
           face_image_path: facePath,
+          consent: true, // the checkbox above is required before this point
         },
       });
 
@@ -570,6 +580,20 @@ export default function PatientRegisterScreen() {
                 </button>
               </div>
             </div>
+
+            <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, lineHeight: 1.5, margin: '4px 0 14px' }}>
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                style={{ marginTop: 3, width: 18, height: 18, flexShrink: 0 }}
+              />
+              <span>
+                I agree that DamLink may store my face photo, national ID, blood type and medical conditions, and use them
+                only to identify me and alert a hospital and my emergency contacts if I am in an emergency. A hospital
+                member of staff confirms every identification. I can ask for my data to be deleted at any time.
+              </span>
+            </label>
 
             <button type="submit" className={styles.submitBtn} disabled={loading}>
               {loading ? (

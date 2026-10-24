@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { ensureSession } from '@/lib/ensureSession';
 import { ArrowLeft, AlertCircle, Phone, Bell, Loader2, RefreshCw, CreditCard, Search } from 'lucide-react';
 import styles from './no-match.module.css';
 
@@ -27,16 +28,16 @@ export default function NoMatchScreen() {
       .replace(/\D/g, '');
   };
 
-  const getCoordinates = (): Promise<{ lat: number; lng: number }> => {
+  const getCoordinates = (): Promise<{ lat: number; lng: number } | null> => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        resolve({ lat: 30.0444, lng: 31.2357 });
+        resolve(null);
         return;
       }
 
       navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => resolve({ lat: 30.0444, lng: 31.2357 })
+        (pos) => resolve({ lat: pos.coords?.latitude, lng: pos.coords.longitude }),
+        () => resolve(null)
       );
     });
   };
@@ -55,12 +56,13 @@ export default function NoMatchScreen() {
 
     try {
       const coords = await getCoordinates();
+      await ensureSession();
       const { data, error } = await supabase.functions.invoke('on-victim-scan', {
         body: {
           scan_mode: 'manual',
           manual_national_id: nationalId,
-          bystander_lat: coords.lat,
-          bystander_lng: coords.lng,
+          bystander_lat: coords?.lat,
+          bystander_lng: coords?.lng,
         },
       });
 
@@ -105,14 +107,15 @@ export default function NoMatchScreen() {
         notes.trim() ? `\nNotes: ${notes.trim()}` : ''
       }`;
 
+      await ensureSession();
       const { data, error } = await supabase.functions.invoke('on-victim-scan', {
         body: {
           scan_mode: 'manual',
           unidentified: true,
           description: descriptionText,
           estimated_blood_type: estimatedBloodType,
-          bystander_lat: coords.lat,
-          bystander_lng: coords.lng,
+          bystander_lat: coords?.lat,
+          bystander_lng: coords?.lng,
         },
       });
 

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { ensureSession } from '@/lib/ensureSession';
 import { ScanFace, CheckCircle, Loader2 } from 'lucide-react';
 import styles from './scanning.module.css';
 
@@ -54,15 +55,15 @@ function ScanningContent() {
     }
   }, [currentStep, steps.length]);
 
-  const getCoordinates = (): Promise<{ lat: number; lng: number }> => {
+  const getCoordinates = (): Promise<{ lat: number; lng: number } | null> => {
     return new Promise((resolve) => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-          () => resolve({ lat: 30.0444, lng: 31.2357 })
+          (pos) => resolve({ lat: pos.coords?.latitude, lng: pos.coords.longitude }),
+          () => resolve(null)
         );
       } else {
-        resolve({ lat: 30.0444, lng: 31.2357 });
+        resolve(null);
       }
     });
   };
@@ -101,14 +102,15 @@ function ScanningContent() {
       }
 
       // Invoke the on-victim-scan Edge Function
+      await ensureSession();
       const { data, error } = await supabase.functions.invoke('on-victim-scan', {
         body: {
           scan_mode: mode,
           image_ref: imageRef,
           image_base64: base64Payload,
           client_request_id: clientRequestId,
-          bystander_lat: coords.lat,
-          bystander_lng: coords.lng,
+          bystander_lat: coords?.lat,
+          bystander_lng: coords?.lng,
         },
       });
 
