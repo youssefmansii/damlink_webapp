@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { ensureSession } from '@/lib/ensureSession';
 import { AlertCircle, ArrowLeft, Bell, HeartPulse, Loader2, MapPin } from 'lucide-react';
 import styles from './nfc.module.css';
 
@@ -37,16 +38,16 @@ function NfcEmergencyContent() {
     previewCard();
   }, [token]);
 
-  const getCoordinates = (): Promise<{ lat: number; lng: number }> => {
+  const getCoordinates = (): Promise<{ lat: number; lng: number } | null> => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        resolve({ lat: 30.0444, lng: 31.2357 });
+        resolve(null);
         return;
       }
 
       navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => resolve({ lat: 30.0444, lng: 31.2357 }),
+        (pos) => resolve({ lat: pos.coords?.latitude, lng: pos.coords.longitude }),
+        () => resolve(null),
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
       );
     });
@@ -71,13 +72,14 @@ function NfcEmergencyContent() {
 
     try {
       const coords = await getCoordinates();
+      await ensureSession();
       const { data, error: fnError } = await supabase.functions.invoke('on-victim-scan', {
         body: {
           scan_mode: 'nfc',
           nfc_token: token,
           preview_only: true,
-          bystander_lat: coords.lat,
-          bystander_lng: coords.lng,
+          bystander_lat: coords?.lat,
+          bystander_lng: coords?.lng,
         },
       });
 
@@ -105,13 +107,14 @@ function NfcEmergencyContent() {
 
     try {
       const coords = await getCoordinates();
+      await ensureSession();
       const { data, error: fnError } = await supabase.functions.invoke('on-victim-scan', {
         body: {
           scan_mode: 'nfc',
           nfc_token: token,
           description: notes.trim() || 'Emergency started from DamLink NFC card.',
-          bystander_lat: coords.lat,
-          bystander_lng: coords.lng,
+          bystander_lat: coords?.lat,
+          bystander_lng: coords?.lng,
         },
       });
 

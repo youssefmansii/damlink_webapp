@@ -148,6 +148,11 @@ export default function RequestDetailScreen() {
 
   const handleRespond = async (action: 'accepted' | 'declined') => {
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.is_anonymous) {
+      alert('Please sign in or register as a donor to respond to this request.');
+      router.push('/');
+      return;
+    }
     setActionLoading(true);
 
     if (user) {

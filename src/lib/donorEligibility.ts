@@ -25,6 +25,16 @@ export const defaultDonorEligibilityAnswers: DonorEligibilityAnswers = {
   seriousMedicalCondition: false,
 };
 
+// Minimum gap between whole-blood donations. Keep in sync with the donor pages and the match-donors
+// Edge Function (MIN_DAYS_BETWEEN_DONATIONS). Confirm the exact number with the Egyptian blood bank rules.
+export const MIN_DAYS_BETWEEN_DONATIONS = 90;
+
+/** Accepts "70", "70.5", "70 kg", "70kg", "70,5". Returns null if it is not a plain weight. */
+export const parseWeightKg = (raw: string): number | null => {
+  const m = /^\s*(\d{1,3}(?:[.,]\d+)?)\s*(?:kg|kgs|kilos?|كجم)?\s*$/i.exec(raw ?? '');
+  return m ? Number(m[1].replace(',', '.')) : null;
+};
+
 const daysBetween = (date: string) => {
   const value = new Date(date).getTime();
   if (Number.isNaN(value)) return null;
@@ -43,7 +53,7 @@ export const evaluateDonorEligibility = (
 ): DonorEligibilityResult => {
   const reasons: string[] = [];
   const age = calculateAge(dob);
-  const weight = Number(answers.weightKg);
+  const weight = parseWeightKg(answers.weightKg);
 
   if (age === null) {
     reasons.push('Date of birth is required for donor activation.');
@@ -51,8 +61,10 @@ export const evaluateDonorEligibility = (
     reasons.push('Donor age should be between 18 and 60 years.');
   }
 
-  if (!answers.weightKg || Number.isNaN(weight)) {
+  if (!answers.weightKg || !answers.weightKg.trim()) {
     reasons.push('Weight is required for donor activation.');
+  } else if (weight === null) {
+    reasons.push('Enter your weight as a number in kg, for example 70.');
   } else if (weight < 50) {
     reasons.push('Weight must be at least 50 kg.');
   }
@@ -83,8 +95,10 @@ export const evaluateDonorEligibility = (
 
   if (answers.lastDonationDate) {
     const days = daysBetween(answers.lastDonationDate);
-    if (days !== null && days >= 0 && days < 56) {
-      reasons.push('Whole blood donation should usually be at least 56 days apart.');
+    if (days !== null && days < -1) {
+      reasons.push('The last donation date is in the future. Please check the date.');
+    } else if (days !== null && days >= -1 && days < MIN_DAYS_BETWEEN_DONATIONS) {
+      reasons.push(`Whole blood donation should usually be at least ${MIN_DAYS_BETWEEN_DONATIONS} days apart.`);
     }
   }
 
